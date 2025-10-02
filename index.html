@@ -76,6 +76,16 @@
       padding: 0 10px;
       z-index: 5;
     }
+    .search-mode-toggle {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #6c757d;
+    }
+    .search-mode-toggle label {
+      margin: 0 12px;
+      cursor: pointer;
+    }
     .suggestions {
       position: absolute;
       background: white;
@@ -440,6 +450,14 @@
       <button id="clearGlobalSearch" onclick="clearGlobalSearch()">×</button>
       <button id="globalSearchBtn" class="btn btn-primary">Найти</button>
     </div>
+    <div class="search-mode-toggle">
+      <label>
+        <input type="radio" name="searchMode" value="or" checked> Любое слово (ИЛИ)
+      </label>
+      <label>
+        <input type="radio" name="searchMode" value="and"> Все слова (И)
+      </label>
+    </div>
     <div class="suggestions" id="suggestions" style="display:none;"></div>
   </div>
   <div class="container">
@@ -454,10 +472,7 @@
       <div id="results-anchor"></div>
       <div class="header">
         <div class="search-row">
-          <div class="search-group">
-            <label>Номер</label>
-            <input type="text" id="queryNumber" class="search-input" placeholder="...">
-          </div>
+          <!-- ✅ ПОЛЕ "НОМЕР" УДАЛЕНО -->
           <div class="search-group">
             <label>Вид</label>
             <select id="typeSelect" class="search-select">
@@ -488,6 +503,16 @@
             <label>До</label>
             <input type="date" id="dateTo" class="search-input">
           </div>
+          <!-- ✅ Сортировка -->
+          <div class="search-group">
+            <label>Сортировка</label>
+            <select id="sortSelect" class="search-select">
+              <option value="date">По дате (новые)</option>
+              <option value="date-asc">По дате (старые)</option>
+              <option value="title">По названию</option>
+              <option value="number">По номеру</option>
+            </select>
+          </div>
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="applyFilters()">Применить</button>
@@ -510,12 +535,10 @@
     </div>
   </div>
   <div id="toast"></div>
-
   <script>
     // === ЗАГРУЗКА ДАННЫХ ИЗ ВНЕШНЕГО JSON ===
     let allDocuments = [];
-    const JSON_URL = 'https://raw.githubusercontent.com/kostyasamsung2013-ship-it/basegochs2025/main/documents.json'; // ← ЗАМЕНИТЕ НА ВАШ URL
-
+    const JSON_URL = 'https://raw.githubusercontent.com/kostyasamsung2013-ship-it/basegochs2025/main/documents.json';
     async function loadDocuments() {
       try {
         const response = await fetch(JSON_URL);
@@ -535,7 +558,6 @@
       }
     }
 
-    // === ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ ===
     let sectionToSubsections = {};
     let allYears = [];
     let currentResults = [];
@@ -546,6 +568,7 @@
     let recentDocs = JSON.parse(localStorage.getItem('gochs_recent') || '[]');
     let currentView = 'all';
 
+    // ✅ ИСПРАВЛЕНА ФУНКЦИЯ
     function escapeHtml(text) {
       if (!text) return "";
       return String(text)
@@ -563,14 +586,6 @@
       setTimeout(() => { toast.style.opacity = "0"; }, 2000);
     }
 
-    function safeLocalStorageSet(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch (e) {
-        console.warn('localStorage error:', e);
-      }
-    }
-
     function parseDateInput(input) {
       const dateRegex = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
       const match = input.match(dateRegex);
@@ -581,6 +596,28 @@
         return `${year}-${month}-${day}`;
       }
       return null;
+    }
+
+    function getSearchMode() {
+      const radios = document.querySelectorAll('input[name="searchMode"]');
+      for (const radio of radios) {
+        if (radio.checked) return radio.value;
+      }
+      return 'or';
+    }
+
+    // ✅ ИСПРАВЛЕНА ФУНКЦИЯ: безопасное приведение к строке
+    function removeDuplicatesByNameAndNumber(docs) {
+      const seen = new Set();
+      return docs.filter(doc => {
+        const title = String(doc.Название || doc.title || '').trim().toLowerCase();
+        const number = String(doc.Номер || doc.number || '').trim().toLowerCase();
+        if (!title && !number) return true;
+        const key = `${title}||${number}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     }
 
     document.getElementById("globalSearch").addEventListener("input", function() {
@@ -652,7 +689,6 @@
 
     function filterByCatalog(catalog) {
       if (!catalog || catalog === "—") return;
-      document.getElementById("queryNumber").value = "";
       document.getElementById("typeSelect").value = "";
       document.getElementById("sourceSelect").value = "";
       document.getElementById("yearSelect").value = "";
@@ -731,7 +767,7 @@
         bookmarks.splice(index, 1);
         showToast('Удалено из избранного');
       }
-      safeLocalStorageSet('gochs_bookmarks', bookmarks);
+      localStorage.setItem('gochs_bookmarks', JSON.stringify(bookmarks));
       updateTabCounts();
       renderResults();
     }
@@ -740,7 +776,7 @@
       recentDocs = recentDocs.filter(d => d.id !== doc.id);
       recentDocs.unshift(doc);
       if (recentDocs.length > 10) recentDocs.pop();
-      safeLocalStorageSet('gochs_recent', recentDocs);
+      localStorage.setItem('gochs_recent', JSON.stringify(recentDocs));
       updateTabCounts();
     }
 
@@ -774,10 +810,6 @@
       if (globalQuery) {
         filters.push({ type: 'global', label: `Поиск: "${globalQuery}"`, value: globalQuery });
       }
-      const queryNumber = document.getElementById("queryNumber").value.trim();
-      if (queryNumber) {
-        filters.push({ type: 'number', label: `Номер: ${queryNumber}`, value: queryNumber });
-      }
       const type = document.getElementById("typeSelect").value;
       if (type) {
         filters.push({ type: 'type', label: `Вид: ${type}`, value: type });
@@ -809,9 +841,12 @@
       selectedCatalogs.forEach(cat => {
         filters.push({ type: 'catalog', label: `Раздел: ${cat}`, value: cat });
       });
-      const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => cb.value);
-      selectedSubcatalogs.forEach(sub => {
-        filters.push({ type: 'subcatalog', label: `Подраздел: ${sub}`, value: sub });
+      const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
+        catalog: cb.getAttribute('data-catalog'),
+        subsection: cb.value
+      }));
+      selectedSubcatalogs.forEach(item => {
+        filters.push({ type: 'subcatalog', label: `Подраздел: ${item.subsection} (${item.catalog})`, value: JSON.stringify(item) });
       });
       return filters;
     }
@@ -842,9 +877,6 @@
             case 'global':
               document.getElementById("globalSearch").value = "";
               break;
-            case 'number':
-              document.getElementById("queryNumber").value = "";
-              break;
             case 'type':
               document.getElementById("typeSelect").value = "";
               break;
@@ -868,7 +900,8 @@
               if (catCheckbox) catCheckbox.checked = false;
               break;
             case 'subcatalog':
-              const subCheckbox = document.querySelector(`.sub-checkbox[value="${CSS.escape(value)}"]`);
+              const item = JSON.parse(value);
+              const subCheckbox = document.querySelector(`.sub-checkbox[data-catalog="${CSS.escape(item.catalog)}"][value="${CSS.escape(item.subsection)}"]`);
               if (subCheckbox) subCheckbox.checked = false;
               break;
           }
@@ -880,18 +913,22 @@
     function applyFilters() {
       currentPage = 1;
       let globalQuery = document.getElementById("globalSearch").value.trim();
-      const queryNumber = document.getElementById("queryNumber").value.trim().toLowerCase();
       const type = document.getElementById("typeSelect").value;
       const source = document.getElementById("sourceSelect").value;
       const year = document.getElementById("yearSelect").value;
       const exactDate = document.getElementById("exactDate").value;
       const dateFrom = document.getElementById("dateFrom").value;
       const dateTo = document.getElementById("dateTo").value;
+
       const parsedDate = parseDateInput(globalQuery);
       if (parsedDate) {
         globalQuery = '';
         const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
-        const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => cb.value);
+        const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
+          catalog: cb.getAttribute('data-catalog'),
+          subsection: cb.value
+        }));
+
         currentResults = allDocuments.filter(doc => {
           const docDate = doc.Дата || doc.date;
           const matchesDate = docDate === parsedDate;
@@ -899,33 +936,45 @@
           const docSection2 = doc["Раздел 2"] || doc.subsection;
           const matchesCatalog = selectedCatalogs.length === 0 || selectedCatalogs.includes(docSection1);
           const matchesSubcatalog = selectedSubcatalogs.length === 0 || 
-            (docSection2 && selectedSubcatalogs.includes(docSection2)) ||
-            (!docSection2 && selectedSubcatalogs.length === 0);
+            selectedSubcatalogs.some(item => 
+              docSection1 === item.catalog && docSection2 === item.subsection
+            );
           return matchesDate && matchesCatalog && matchesSubcatalog;
         });
-        currentResults.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
+
+        const sortBy = document.getElementById("sortSelect").value;
+        sortResults(currentResults, sortBy);
+
         renderResults();
         renderActiveFilters();
         scrollToResults();
         return;
       }
+
       const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
-      const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => cb.value);
+      const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
+        catalog: cb.getAttribute('data-catalog'),
+        subsection: cb.value
+      }));
+
       const filteredDocs = allDocuments.filter(doc => {
         let matchesGlobal = true;
         if (globalQuery) {
-          const searchableFields = [
-            doc.Название || doc.title,
-            doc.Номер || doc.number,
-            doc.Вид || doc.type,
-            doc.Источник || doc.source,
-            doc["Раздел 1"] || doc.section,
-            doc["Раздел 2"] || doc.subsection
-          ].filter(Boolean).join(' ').toLowerCase();
-          matchesGlobal = searchableFields.includes(globalQuery.toLowerCase());
+          const queryWords = globalQuery.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+          const docText = [
+            doc.Название || doc.title || '',
+            doc.Номер || doc.number || '',
+            doc.Дата || doc.date || ''
+          ].join(' ').toLowerCase();
+
+          const mode = getSearchMode();
+          if (mode === 'and') {
+            matchesGlobal = queryWords.every(word => docText.includes(word));
+          } else {
+            matchesGlobal = queryWords.length === 0 || queryWords.some(word => docText.includes(word));
+          }
         }
-        const docNumber = doc.Номер || doc.number;
-        const matchesNumber = !queryNumber || (docNumber && docNumber.toLowerCase().includes(queryNumber));
+
         const docType = doc.Вид || doc.type;
         const matchesType = !type || (docType && docType === type);
         const docSource = doc.Источник || doc.source;
@@ -936,8 +985,9 @@
         const matchesCatalog = selectedCatalogs.length === 0 || selectedCatalogs.includes(docSection1);
         const docSection2 = doc["Раздел 2"] || doc.subsection;
         const matchesSubcatalog = selectedSubcatalogs.length === 0 || 
-          (docSection2 && selectedSubcatalogs.includes(docSection2)) ||
-          (!docSection2 && selectedSubcatalogs.length === 0);
+          selectedSubcatalogs.some(item => 
+            docSection1 === item.catalog && docSection2 === item.subsection
+          );
         let matchesDate = true;
         const docDate = doc.Дата || doc.date;
         if (exactDate) {
@@ -947,22 +997,45 @@
           if (dateFrom && docDate < dateFrom) return false;
           if (dateTo && docDate > dateTo) return false;
         }
-        return matchesGlobal && matchesNumber && matchesType && matchesSource && 
+        return matchesGlobal && matchesType && matchesSource && 
                matchesYear && matchesCatalog && matchesSubcatalog && matchesDate;
       });
+
+      // ✅ УДАЛЯЕМ ДУБЛИ ВО ВСЕХ РЕЖИМАХ
+      let unfilteredResults;
       if (currentView === 'bookmarks') {
-        currentResults = filteredDocs.filter(doc => bookmarks.includes(doc.id));
+        unfilteredResults = filteredDocs.filter(doc => bookmarks.includes(doc.id));
       } else if (currentView === 'recent') {
-        currentResults = recentDocs;
+        unfilteredResults = recentDocs;
       } else {
-        currentResults = filteredDocs;
+        unfilteredResults = filteredDocs;
       }
+      currentResults = removeDuplicatesByNameAndNumber(unfilteredResults);
+
       if (currentView !== 'recent') {
-        currentResults.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
+        const sortBy = document.getElementById("sortSelect").value;
+        sortResults(currentResults, sortBy);
       }
+
       renderResults();
       renderActiveFilters();
       scrollToResults();
+    }
+
+    function sortResults(arr, sortBy) {
+      if (sortBy === 'title') {
+        arr.sort((a, b) => (a.Название || a.title || '').localeCompare(b.Название || b.title || ''));
+      } else if (sortBy === 'number') {
+        arr.sort((a, b) => {
+          const numA = String(a.Номер || a.number || '');
+          const numB = String(b.Номер || b.number || '');
+          return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+      } else if (sortBy === 'date-asc') {
+        arr.sort((a, b) => (a.Дата || a.date || "").localeCompare(b.Дата || b.date || ""));
+      } else {
+        arr.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
+      }
     }
 
     function renderResults() {
@@ -1111,20 +1184,21 @@
     function clearFilters() {
       document.getElementById("globalSearch").value = "";
       document.getElementById("clearGlobalSearch").style.display = "none";
-      document.getElementById("queryNumber").value = "";
       document.getElementById("typeSelect").value = "";
       document.getElementById("sourceSelect").value = "";
       document.getElementById("yearSelect").value = "";
       document.getElementById("exactDate").value = "";
       document.getElementById("dateFrom").value = "";
       document.getElementById("dateTo").value = "";
+      document.getElementById("sortSelect").value = "date";
+      localStorage.removeItem('gochs_search_mode');
+      document.querySelector('input[name="searchMode"][value="or"]').checked = true;
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       applyFilters();
     }
 
     // === ИНИЦИАЛИЗАЦИЯ ===
     function initializeApp() {
-      // Подготовка данных
       allYears = [...new Set(
         allDocuments
           .map(d => (d.Дата || d.date || "").split('-')[0])
@@ -1182,11 +1256,30 @@
       });
 
       document.getElementById("globalSearchBtn").addEventListener("click", applyFilters);
+      document.getElementById("sortSelect").addEventListener("change", applyFilters);
+
+      // ✅ БЕЗОПАСНОЕ ВОССТАНОВЛЕНИЕ РЕЖИМА ПОИСКА
+      let savedMode = localStorage.getItem('gochs_search_mode');
+      if (savedMode) {
+        savedMode = savedMode.replace(/^["']|["']$/g, '').trim();
+        if (savedMode !== 'or' && savedMode !== 'and') savedMode = 'or';
+      } else {
+        savedMode = 'or';
+      }
+      localStorage.setItem('gochs_search_mode', savedMode);
+      document.querySelector(`input[name="searchMode"][value="${savedMode}"]`).checked = true;
+
+      document.querySelectorAll('input[name="searchMode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          localStorage.setItem('gochs_search_mode', radio.value); // ✅ без JSON.stringify!
+          applyFilters();
+        });
+      });
+
       updateTabCounts();
       applyFilters();
     }
 
-    // Запуск загрузки при загрузке страницы
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById("globalSearch").focus();
       loadDocuments();
