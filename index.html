@@ -279,12 +279,12 @@
       font-size: 14px;
       color: #495057;
     }
-    /* ✅ ОДНА КАРТОЧКА В РЯДУ */
+    /* ✅ ОСТАВЛЕНА ГИБКАЯ СЕТКА (как в исходнике) */
     .results-grid {
-      display: grid;
-      grid-template-columns: 1fr; /* всегда одна колонка */
-      gap: 16px;
-    }
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
     .card {
       background: var(--card-bg);
       border-radius: 10px;
@@ -312,7 +312,7 @@
     }
     .card-header-line {
       font-size: 13px;
-      color: #6c757d;
+      color: #000;
       margin-bottom: 6px;
     }
     .card-meta {
@@ -511,12 +511,12 @@
           <div class="search-group">
             <label>Сортировка</label>
             <select id="sortSelect" class="search-select">
-              <option value="date">По дате (новые)</option>
-              <option value="date-asc">По дате (старые)</option>
-              <option value="title">По названию (А→Я)</option>
-              <option value="title-desc">По названию (Я→А)</option>
-              <option value="number">По номеру (1→100)</option>
-              <option value="number-desc">По номеру (100→1)</option>
+              <option value="date">По дате (Убывание)</option>
+              <option value="date-asc">По дате (Возрастание)</option>
+              <option value="title">По названию (А → Я)</option>
+              <option value="title-desc">По названию (Я → А)</option>
+              <option value="number">По номеру (по возрастанию)</option>
+              <option value="number-desc">По номеру (по убыванию)</option>
             </select>
           </div>
         </div>
@@ -572,7 +572,6 @@
     let bookmarks = JSON.parse(localStorage.getItem('gochs_bookmarks') || '[]');
     let recentDocs = JSON.parse(localStorage.getItem('gochs_recent') || '[]');
     let currentView = 'all';
-
     function escapeHtml(text) {
       if (!text) return "";
       return String(text)
@@ -582,14 +581,12 @@
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
-
     function showToast(message) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.style.opacity = "1";
       setTimeout(() => { toast.style.opacity = "0"; }, 2000);
     }
-
     function parseDateInput(input) {
       const dateRegex = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
       const match = input.match(dateRegex);
@@ -601,7 +598,6 @@
       }
       return null;
     }
-
     function getSearchMode() {
       const radios = document.querySelectorAll('input[name="searchMode"]');
       for (const radio of radios) {
@@ -609,7 +605,6 @@
       }
       return 'or';
     }
-
     function removeDuplicatesByNameAndNumber(docs) {
       const seen = new Set();
       return docs.filter(doc => {
@@ -622,14 +617,12 @@
         return true;
       });
     }
-
     document.getElementById("globalSearch").addEventListener("input", function() {
       const clearBtn = document.getElementById("clearGlobalSearch");
       clearBtn.style.display = this.value ? "block" : "none";
       clearTimeout(suggestionsTimeout);
       suggestionsTimeout = setTimeout(() => showSuggestions(this.value), 300);
     });
-
     function showSuggestions(query) {
       const suggestionsDiv = document.getElementById("suggestions");
       if (!query.trim() || query.length < 2) {
@@ -650,31 +643,26 @@
       ).join('');
       suggestionsDiv.style.display = "block";
     }
-
     function selectSuggestion(name) {
       document.getElementById("globalSearch").value = name;
       document.getElementById("suggestions").style.display = "none";
       applyFilters();
     }
-
     function clearGlobalSearch() {
       document.getElementById("globalSearch").value = "";
       document.getElementById("clearGlobalSearch").style.display = "none";
       document.getElementById("suggestions").style.display = "none";
       applyFilters();
     }
-
     document.addEventListener("click", function(e) {
       if (!e.target.closest(".global-search")) {
         document.getElementById("suggestions").style.display = "none";
       }
     });
-
     function toggleMobileFilters() {
       const panel = document.getElementById('filtersPanel');
       panel.classList.toggle('active');
     }
-
     function filterByField(fieldName, value) {
       if (!value || value === "—") return;
       document.querySelectorAll('.catalog-checkbox, .sub-checkbox').forEach(cb => cb.checked = false);
@@ -689,7 +677,6 @@
       }
       applyFilters();
     }
-
     function filterByCatalog(catalog) {
       if (!catalog || catalog === "—") return;
       document.getElementById("typeSelect").value = "";
@@ -704,14 +691,12 @@
       applyFilters();
       scrollToResults();
     }
-
     function scrollToResults() {
       const anchor = document.getElementById("results-anchor");
       if (anchor) {
         anchor.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-
     function renderCatalogList() {
       const container = document.getElementById("catalog-list");
       container.innerHTML = "";
@@ -754,13 +739,11 @@
         });
       });
     }
-
     function updateTabCounts() {
       document.getElementById('bookmark-count').textContent = bookmarks.length;
       document.getElementById('recent-count').textContent = recentDocs.length;
       document.getElementById('exportBookmarks').style.display = bookmarks.length > 0 ? 'block' : 'none';
     }
-
     function toggleBookmark(docId) {
       const index = bookmarks.indexOf(docId);
       if (index === -1) {
@@ -774,7 +757,6 @@
       updateTabCounts();
       renderResults();
     }
-
     function addRecentDoc(doc) {
       recentDocs = recentDocs.filter(d => d.id !== doc.id);
       recentDocs.unshift(doc);
@@ -782,7 +764,6 @@
       localStorage.setItem('gochs_recent', JSON.stringify(recentDocs));
       updateTabCounts();
     }
-
     function exportBookmarksToExcel() {
       if (bookmarks.length === 0) {
         showToast('Нет закладок для экспорта');
@@ -806,7 +787,6 @@
       XLSX.writeFile(wb, "Закладки_ГОЧС.xlsx");
       showToast('Закладки экспортированы в Excel!');
     }
-
     function getActiveFilters() {
       const filters = [];
       const globalQuery = document.getElementById("globalSearch").value.trim();
@@ -853,7 +833,6 @@
       });
       return filters;
     }
-
     function renderActiveFilters() {
       const filters = getActiveFilters();
       const container = document.getElementById("activeFilters");
@@ -912,7 +891,6 @@
         });
       });
     }
-
     function applyFilters() {
       currentPage = 1;
       let globalQuery = document.getElementById("globalSearch").value.trim();
@@ -1012,61 +990,31 @@
       renderActiveFilters();
       scrollToResults();
     }
-
-    // ✅ ПОЛНОСТЬЮ ПЕРЕДЕЛАННАЯ СОРТИРОВКА
     function sortResults(arr, sortBy) {
       if (sortBy === 'title') {
-        // А → Я
-        arr.sort((a, b) => {
-          const aT = (a.Название || a.title || '').trim().toLowerCase();
-          const bT = (b.Название || b.title || '').trim().toLowerCase();
-          return aT.localeCompare(bT, 'ru', { sensitivity: 'base' });
-        });
+        arr.sort((a, b) => (a.Название || a.title || '').localeCompare(b.Название || b.title || ''));
       } else if (sortBy === 'title-desc') {
-        // Я → А
-        arr.sort((a, b) => {
-          const aT = (a.Название || a.title || '').trim().toLowerCase();
-          const bT = (b.Название || b.title || '').trim().toLowerCase();
-          return bT.localeCompare(aT, 'ru', { sensitivity: 'base' });
-        });
+        arr.sort((a, b) => (b.Название || b.title || '').localeCompare(a.Название || a.title || ''));
       } else if (sortBy === 'number') {
-        // 1 → 100
         arr.sort((a, b) => {
-          const aN = String(a.Номер || a.number || '').trim();
-          const bN = String(b.Номер || b.number || '').trim();
-          return aN.localeCompare(bN, 'ru', { numeric: true, sensitivity: 'base' });
+          const numA = String(a.Номер || a.number || '');
+          const numB = String(b.Номер || b.number || '');
+          return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
         });
       } else if (sortBy === 'number-desc') {
-        // 100 → 1
         arr.sort((a, b) => {
-          const aN = String(a.Номер || a.number || '').trim();
-          const bN = String(b.Номер || b.number || '').trim();
-          return bN.localeCompare(aN, 'ru', { numeric: true, sensitivity: 'base' });
+          const numA = String(a.Номер || a.number || '');
+          const numB = String(b.Номер || b.number || '');
+          return numB.localeCompare(numA, undefined, { numeric: true, sensitivity: 'base' });
         });
       } else if (sortBy === 'date-asc') {
-        // Старые → Новые
-        arr.sort((a, b) => {
-          const dateA = a.Дата || a.date || "";
-          const dateB = b.Дата || b.date || "";
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return 1;
-          if (!dateB) return -1;
-          return dateA.localeCompare(dateB);
-        });
+        arr.sort((a, b) => (a.Дата || a.date || "").localeCompare(b.Дата || b.date || ""));
       } else {
-        // Новые → Старые (по умолчанию)
-        arr.sort((a, b) => {
-          const dateA = a.Дата || a.date || "";
-          const dateB = b.Дата || b.date || "";
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return 1;
-          if (!dateB) return -1;
-          return dateB.localeCompare(dateA);
-        });
+        // 'date' — По дате (Убывание): новые сначала
+        arr.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
       }
     }
-
-    // ✅ ОБНОВЛЁННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ
+    // ✅ ОБНОВЛЁННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ КАРТОЧЕК
     function renderResults() {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
@@ -1078,7 +1026,6 @@
         statusDiv.innerHTML = `Показано ${start + 1}–${Math.min(end, currentResults.length)} из ${currentResults.length} документов`;
       }
       const resultsDiv = document.getElementById("results");
-
       if (pageResults.length === 0) {
         let icon = '📄';
         let message = 'Ничего не найдено';
@@ -1101,17 +1048,14 @@
         `;
         return;
       }
-
       resultsDiv.innerHTML = "";
       const grid = document.createElement("div");
       grid.className = "results-grid";
-
       pageResults.forEach((doc, idx) => {
         setTimeout(() => {
           const card = document.createElement("div");
           card.className = "card";
           card.setAttribute('data-doc', JSON.stringify(doc));
-
           const docTitle = doc.Название || doc.title || "Без названия";
           const docNumber = doc.Номер || doc.number || "";
           const docType = doc.Вид || doc.type || "";
@@ -1121,7 +1065,6 @@
           const docSection2 = doc["Раздел 2"] || doc.subsection || "—";
           const docLink = doc.ссылка || doc.rtfUrl;
           const docDownload = doc["Ссылка для открытия"] || doc.rtfDirectUrl;
-
           // Формат даты
           let formattedDate = "";
           if (docDateRaw) {
@@ -1130,15 +1073,18 @@
               formattedDate = d.toLocaleDateString('ru-RU');
             }
           }
-
-          // Первая строка: "Приказ МЧС России №123 от 15.03.2024"
+          // ✅ НОВАЯ ПЕРВАЯ СТРОКА: Источник Вид № Номер от ДД.ММ.ГГГГ
           const parts = [];
-          if (docType) parts.push(docType);
           if (docSource) parts.push(docSource);
-          if (docNumber) parts.push(`№${docNumber}`);
+          if (docType) parts.push(docType);
+          if (docNumber) parts.push(`№ ${docNumber}`); // ← пробел после №
           if (formattedDate) parts.push(`от ${formattedDate}`);
           const headerLine = parts.join(" ") || "—";
-
+          // ✅ ОДНОСТРОЧНАЯ МЕТА-ИНФОРМАЦИЯ
+          const metaLine = `
+            🗂️ <a href="#" onclick="filterByCatalog('${escapeHtml(docSection1)}'); return false;">${escapeHtml(docSection1)}</a> /
+            📂 ${escapeHtml(docSection2)}
+          `;
           card.innerHTML = `
             <div class="card-header-line">${escapeHtml(headerLine)}</div>
             <div class="card-title">
@@ -1146,11 +1092,8 @@
                 ? `<a href="${escapeHtml(docLink)}" target="_blank" class="doc-link">${escapeHtml(docTitle)}</a>` 
                 : escapeHtml(docTitle)}
             </div>
-            <div class="card-meta" style="font-size:12px; margin:6px 0; color:#495057;">
-              🗂️ Раздел: <a href="#" onclick="filterByCatalog('${escapeHtml(docSection1)}'); return false;">${escapeHtml(docSection1)}</a><br>
-              📂 Подраздел: ${escapeHtml(docSection2)}<br>
-              🏷️ Вид: <a href="#" onclick="filterByField('Вид', '${escapeHtml(docType)}'); return false;">${escapeHtml(docType || "—")}</a><br>
-              📎 Источник: <a href="#" onclick="filterByField('Источник', '${escapeHtml(docSource)}'); return false;">${escapeHtml(docSource)}</a>
+            <div class="card-meta" style="font-size:12px; margin:6px 0; color:#6c757d;">
+              ${metaLine}
             </div>
             <div class="card-actions">
               ${docLink 
@@ -1165,7 +1108,6 @@
             </div>
           `;
           grid.appendChild(card);
-
           card.querySelectorAll('.doc-link').forEach(link => {
             link.addEventListener('click', function(e) {
               const docJson = card.getAttribute('data-doc');
@@ -1177,11 +1119,9 @@
           });
         }, idx * 15);
       });
-
       resultsDiv.appendChild(grid);
       renderPagination();
     }
-
     function renderPagination() {
       if (currentView === 'recent') {
         document.getElementById("pagination-top").innerHTML = "";
@@ -1219,14 +1159,12 @@
       top.innerHTML = html;
       bottom.innerHTML = html;
     }
-
     function goToPage(page) {
       currentPage = page;
       renderResults();
       renderActiveFilters();
       scrollToResults();
     }
-
     function clearFilters() {
       document.getElementById("globalSearch").value = "";
       document.getElementById("clearGlobalSearch").style.display = "none";
@@ -1242,12 +1180,10 @@
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       applyFilters();
     }
-
     function initializeApp() {
       allDocuments.forEach((doc, idx) => {
         if (!doc.id) doc.id = `doc_${idx}`;
       });
-
       allYears = [...new Set(
         allDocuments
           .map(d => (d.Дата || d.date || "").split('-')[0])
@@ -1316,13 +1252,11 @@
       updateTabCounts();
       applyFilters();
     }
-
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById("globalSearch").focus();
       loadDocuments();
     });
-
-    // Глобальные функции
+    // Глобальные функции для onclick
     window.filterByField = filterByField;
     window.filterByCatalog = filterByCatalog;
     window.toggleBookmark = toggleBookmark;
