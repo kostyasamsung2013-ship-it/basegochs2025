@@ -279,9 +279,10 @@
       font-size: 14px;
       color: #495057;
     }
+    /* ✅ ОДНА КАРТОЧКА В РЯДУ */
     .results-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: 1fr; /* всегда одна колонка */
       gap: 16px;
     }
     .card {
@@ -299,7 +300,7 @@
     .card-title {
       font-weight: 600;
       font-size: 15px;
-      margin: 0 0 6px 0;
+      margin: 6px 0;
       color: var(--primary);
     }
     .card-title a {
@@ -308,6 +309,11 @@
     }
     .card-title a:hover {
       text-decoration: underline;
+    }
+    .card-header-line {
+      font-size: 13px;
+      color: #6c757d;
+      margin-bottom: 6px;
     }
     .card-meta {
       font-size: 12px;
@@ -472,7 +478,6 @@
       <div id="results-anchor"></div>
       <div class="header">
         <div class="search-row">
-          <!-- ✅ ПОЛЕ "НОМЕР" УДАЛЕНО -->
           <div class="search-group">
             <label>Вид</label>
             <select id="typeSelect" class="search-select">
@@ -503,14 +508,15 @@
             <label>До</label>
             <input type="date" id="dateTo" class="search-input">
           </div>
-          <!-- ✅ Сортировка -->
           <div class="search-group">
             <label>Сортировка</label>
             <select id="sortSelect" class="search-select">
               <option value="date">По дате (новые)</option>
               <option value="date-asc">По дате (старые)</option>
-              <option value="title">По названию</option>
-              <option value="number">По номеру</option>
+              <option value="title">По названию (А→Я)</option>
+              <option value="title-desc">По названию (Я→А)</option>
+              <option value="number">По номеру (1→100)</option>
+              <option value="number-desc">По номеру (100→1)</option>
             </select>
           </div>
         </div>
@@ -557,7 +563,6 @@
         `;
       }
     }
-
     let sectionToSubsections = {};
     let allYears = [];
     let currentResults = [];
@@ -568,7 +573,6 @@
     let recentDocs = JSON.parse(localStorage.getItem('gochs_recent') || '[]');
     let currentView = 'all';
 
-    // ✅ ИСПРАВЛЕНА ФУНКЦИЯ
     function escapeHtml(text) {
       if (!text) return "";
       return String(text)
@@ -606,7 +610,6 @@
       return 'or';
     }
 
-    // ✅ ИСПРАВЛЕНА ФУНКЦИЯ: безопасное приведение к строке
     function removeDuplicatesByNameAndNumber(docs) {
       const seen = new Set();
       return docs.filter(doc => {
@@ -919,7 +922,6 @@
       const exactDate = document.getElementById("exactDate").value;
       const dateFrom = document.getElementById("dateFrom").value;
       const dateTo = document.getElementById("dateTo").value;
-
       const parsedDate = parseDateInput(globalQuery);
       if (parsedDate) {
         globalQuery = '';
@@ -928,7 +930,6 @@
           catalog: cb.getAttribute('data-catalog'),
           subsection: cb.value
         }));
-
         currentResults = allDocuments.filter(doc => {
           const docDate = doc.Дата || doc.date;
           const matchesDate = docDate === parsedDate;
@@ -941,22 +942,18 @@
             );
           return matchesDate && matchesCatalog && matchesSubcatalog;
         });
-
         const sortBy = document.getElementById("sortSelect").value;
         sortResults(currentResults, sortBy);
-
         renderResults();
         renderActiveFilters();
         scrollToResults();
         return;
       }
-
       const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
       const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
         catalog: cb.getAttribute('data-catalog'),
         subsection: cb.value
       }));
-
       const filteredDocs = allDocuments.filter(doc => {
         let matchesGlobal = true;
         if (globalQuery) {
@@ -966,7 +963,6 @@
             doc.Номер || doc.number || '',
             doc.Дата || doc.date || ''
           ].join(' ').toLowerCase();
-
           const mode = getSearchMode();
           if (mode === 'and') {
             matchesGlobal = queryWords.every(word => docText.includes(word));
@@ -974,7 +970,6 @@
             matchesGlobal = queryWords.length === 0 || queryWords.some(word => docText.includes(word));
           }
         }
-
         const docType = doc.Вид || doc.type;
         const matchesType = !type || (docType && docType === type);
         const docSource = doc.Источник || doc.source;
@@ -1000,8 +995,6 @@
         return matchesGlobal && matchesType && matchesSource && 
                matchesYear && matchesCatalog && matchesSubcatalog && matchesDate;
       });
-
-      // ✅ УДАЛЯЕМ ДУБЛИ ВО ВСЕХ РЕЖИМАХ
       let unfilteredResults;
       if (currentView === 'bookmarks') {
         unfilteredResults = filteredDocs.filter(doc => bookmarks.includes(doc.id));
@@ -1011,33 +1004,69 @@
         unfilteredResults = filteredDocs;
       }
       currentResults = removeDuplicatesByNameAndNumber(unfilteredResults);
-
       if (currentView !== 'recent') {
         const sortBy = document.getElementById("sortSelect").value;
         sortResults(currentResults, sortBy);
       }
-
       renderResults();
       renderActiveFilters();
       scrollToResults();
     }
 
+    // ✅ ПОЛНОСТЬЮ ПЕРЕДЕЛАННАЯ СОРТИРОВКА
     function sortResults(arr, sortBy) {
       if (sortBy === 'title') {
-        arr.sort((a, b) => (a.Название || a.title || '').localeCompare(b.Название || b.title || ''));
-      } else if (sortBy === 'number') {
+        // А → Я
         arr.sort((a, b) => {
-          const numA = String(a.Номер || a.number || '');
-          const numB = String(b.Номер || b.number || '');
-          return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
+          const aT = (a.Название || a.title || '').trim().toLowerCase();
+          const bT = (b.Название || b.title || '').trim().toLowerCase();
+          return aT.localeCompare(bT, 'ru', { sensitivity: 'base' });
+        });
+      } else if (sortBy === 'title-desc') {
+        // Я → А
+        arr.sort((a, b) => {
+          const aT = (a.Название || a.title || '').trim().toLowerCase();
+          const bT = (b.Название || b.title || '').trim().toLowerCase();
+          return bT.localeCompare(aT, 'ru', { sensitivity: 'base' });
+        });
+      } else if (sortBy === 'number') {
+        // 1 → 100
+        arr.sort((a, b) => {
+          const aN = String(a.Номер || a.number || '').trim();
+          const bN = String(b.Номер || b.number || '').trim();
+          return aN.localeCompare(bN, 'ru', { numeric: true, sensitivity: 'base' });
+        });
+      } else if (sortBy === 'number-desc') {
+        // 100 → 1
+        arr.sort((a, b) => {
+          const aN = String(a.Номер || a.number || '').trim();
+          const bN = String(b.Номер || b.number || '').trim();
+          return bN.localeCompare(aN, 'ru', { numeric: true, sensitivity: 'base' });
         });
       } else if (sortBy === 'date-asc') {
-        arr.sort((a, b) => (a.Дата || a.date || "").localeCompare(b.Дата || b.date || ""));
+        // Старые → Новые
+        arr.sort((a, b) => {
+          const dateA = a.Дата || a.date || "";
+          const dateB = b.Дата || b.date || "";
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dateA.localeCompare(dateB);
+        });
       } else {
-        arr.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
+        // Новые → Старые (по умолчанию)
+        arr.sort((a, b) => {
+          const dateA = a.Дата || a.date || "";
+          const dateB = b.Дата || b.date || "";
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dateB.localeCompare(dateA);
+        });
       }
     }
 
+    // ✅ ОБНОВЛЁННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ
     function renderResults() {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
@@ -1049,6 +1078,7 @@
         statusDiv.innerHTML = `Показано ${start + 1}–${Math.min(end, currentResults.length)} из ${currentResults.length} документов`;
       }
       const resultsDiv = document.getElementById("results");
+
       if (pageResults.length === 0) {
         let icon = '📄';
         let message = 'Ничего не найдено';
@@ -1069,70 +1099,86 @@
             <div>${advice}</div>
           </div>
         `;
-      } else {
-        resultsDiv.innerHTML = "";
-        const grid = document.createElement("div");
-        grid.className = "results-grid";
-        pageResults.forEach((doc, idx) => {
-          setTimeout(() => {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.setAttribute('data-doc', JSON.stringify(doc));
-            let badgeClass = 'badge badge-default';
-            const docType = doc.Вид || doc.type;
-            if (docType) {
-              if (/приказ/i.test(docType)) badgeClass = 'badge badge-order';
-              else if (/инструкц/i.test(docType)) badgeClass = 'badge badge-instruction';
-              else if (/метод/i.test(docType)) badgeClass = 'badge badge-method';
-              else if (/письм/i.test(docType)) badgeClass = 'badge badge-letter';
-            }
-            const docTitle = doc.Название || doc.title || "Без названия";
-            const docNumber = doc.Номер || doc.number || "—";
-            const docSection1 = doc["Раздел 1"] || doc.section || "—";
-            const docSection2 = doc["Раздел 2"] || doc.subsection || "—";
-            const docSource = doc.Источник || doc.source || "—";
-            const docLink = doc.ссылка || doc.rtfUrl;
-            const docDownload = doc["Ссылка для открытия"] || doc.rtfDirectUrl;
-            card.innerHTML = `
-              <div class="card-title">
-                ${docLink 
-                  ? `<a href="${escapeHtml(docLink)}" target="_blank" class="doc-link">${escapeHtml(docTitle)}</a>` 
-                  : escapeHtml(docTitle)}
-              </div>
-              <div class="card-meta">
-                📄 Номер: ${escapeHtml(docNumber)}<br>
-                🗂️ Раздел: <a href="#" onclick="filterByCatalog('${escapeHtml(docSection1)}'); return false;">${escapeHtml(docSection1)}</a><br>
-                📂 Подраздел: ${escapeHtml(docSection2)}<br>
-                🏷️ Вид: <a href="#" onclick="filterByField('Вид', '${escapeHtml(docType)}'); return false;">${escapeHtml(docType || "—")} ${docType ? `<span class="${badgeClass}">${escapeHtml(docType)}</span>` : ''}</a><br>
-                📅 Дата: ${escapeHtml(doc.Дата || doc.date || "—")}<br>
-                📎 Источник: <a href="#" onclick="filterByField('Источник', '${escapeHtml(docSource)}'); return false;">${escapeHtml(docSource)}</a>
-              </div>
-              <div class="card-actions">
-                ${docLink 
-                  ? `<a href="${escapeHtml(docLink)}" target="_blank" class="doc-link">📄 Открыть</a>` 
-                  : ""}
-                ${docDownload 
-                  ? `<a href="${escapeHtml(docDownload)}" target="_blank" class="doc-link">⬇️ Скачать</a>` 
-                  : ""}
-                <button class="bookmark-btn" onclick="toggleBookmark('${doc.id}')">
-                  ${bookmarks.includes(doc.id) ? '⭐ В избранном' : '☆ В избранное'}
-                </button>
-              </div>
-            `;
-            grid.appendChild(card);
-            card.querySelectorAll('.doc-link').forEach(link => {
-              link.addEventListener('click', function(e) {
-                const docJson = card.getAttribute('data-doc');
-                if (docJson) {
-                  const docObj = JSON.parse(docJson);
-                  addRecentDoc(docObj);
-                }
-              });
-            });
-          }, idx * 15);
-        });
-        resultsDiv.appendChild(grid);
+        return;
       }
+
+      resultsDiv.innerHTML = "";
+      const grid = document.createElement("div");
+      grid.className = "results-grid";
+
+      pageResults.forEach((doc, idx) => {
+        setTimeout(() => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.setAttribute('data-doc', JSON.stringify(doc));
+
+          const docTitle = doc.Название || doc.title || "Без названия";
+          const docNumber = doc.Номер || doc.number || "";
+          const docType = doc.Вид || doc.type || "";
+          const docSource = doc.Источник || doc.source || "";
+          const docDateRaw = doc.Дата || doc.date || "";
+          const docSection1 = doc["Раздел 1"] || doc.section || "—";
+          const docSection2 = doc["Раздел 2"] || doc.subsection || "—";
+          const docLink = doc.ссылка || doc.rtfUrl;
+          const docDownload = doc["Ссылка для открытия"] || doc.rtfDirectUrl;
+
+          // Формат даты
+          let formattedDate = "";
+          if (docDateRaw) {
+            const d = new Date(docDateRaw);
+            if (!isNaN(d.getTime())) {
+              formattedDate = d.toLocaleDateString('ru-RU');
+            }
+          }
+
+          // Первая строка: "Приказ МЧС России №123 от 15.03.2024"
+          const parts = [];
+          if (docType) parts.push(docType);
+          if (docSource) parts.push(docSource);
+          if (docNumber) parts.push(`№${docNumber}`);
+          if (formattedDate) parts.push(`от ${formattedDate}`);
+          const headerLine = parts.join(" ") || "—";
+
+          card.innerHTML = `
+            <div class="card-header-line">${escapeHtml(headerLine)}</div>
+            <div class="card-title">
+              ${docLink 
+                ? `<a href="${escapeHtml(docLink)}" target="_blank" class="doc-link">${escapeHtml(docTitle)}</a>` 
+                : escapeHtml(docTitle)}
+            </div>
+            <div class="card-meta" style="font-size:12px; margin:6px 0; color:#495057;">
+              🗂️ Раздел: <a href="#" onclick="filterByCatalog('${escapeHtml(docSection1)}'); return false;">${escapeHtml(docSection1)}</a><br>
+              📂 Подраздел: ${escapeHtml(docSection2)}<br>
+              🏷️ Вид: <a href="#" onclick="filterByField('Вид', '${escapeHtml(docType)}'); return false;">${escapeHtml(docType || "—")}</a><br>
+              📎 Источник: <a href="#" onclick="filterByField('Источник', '${escapeHtml(docSource)}'); return false;">${escapeHtml(docSource)}</a>
+            </div>
+            <div class="card-actions">
+              ${docLink 
+                ? `<a href="${escapeHtml(docLink)}" target="_blank" class="doc-link">📄 Открыть</a>` 
+                : ""}
+              ${docDownload 
+                ? `<a href="${escapeHtml(docDownload)}" target="_blank" class="doc-link">⬇️ Скачать</a>` 
+                : ""}
+              <button class="bookmark-btn" onclick="toggleBookmark('${doc.id}')">
+                ${bookmarks.includes(doc.id) ? '⭐ В избранном' : '☆ В избранное'}
+              </button>
+            </div>
+          `;
+          grid.appendChild(card);
+
+          card.querySelectorAll('.doc-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+              const docJson = card.getAttribute('data-doc');
+              if (docJson) {
+                const docObj = JSON.parse(docJson);
+                addRecentDoc(docObj);
+              }
+            });
+          });
+        }, idx * 15);
+      });
+
+      resultsDiv.appendChild(grid);
       renderPagination();
     }
 
@@ -1197,14 +1243,16 @@
       applyFilters();
     }
 
-    // === ИНИЦИАЛИЗАЦИЯ ===
     function initializeApp() {
+      allDocuments.forEach((doc, idx) => {
+        if (!doc.id) doc.id = `doc_${idx}`;
+      });
+
       allYears = [...new Set(
         allDocuments
           .map(d => (d.Дата || d.date || "").split('-')[0])
           .filter(Boolean)
       )].sort().reverse();
-
       sectionToSubsections = {};
       allDocuments.forEach(doc => {
         const sec1 = doc["Раздел 1"] || doc.section;
@@ -1216,12 +1264,9 @@
       for (const sec in sectionToSubsections) {
         sectionToSubsections[sec] = Array.from(sectionToSubsections[sec]).sort();
       }
-
       renderCatalogList();
-
       const types = [...new Set(allDocuments.map(d => d.Вид || d.type).filter(Boolean))].sort();
       const sources = [...new Set(allDocuments.map(d => d.Источник || d.source).filter(Boolean))].sort();
-
       const typeSelect = document.getElementById("typeSelect");
       types.forEach(t => {
         const opt = document.createElement("option");
@@ -1229,7 +1274,6 @@
         opt.textContent = t;
         typeSelect.appendChild(opt);
       });
-
       const sourceSelect = document.getElementById("sourceSelect");
       sources.forEach(s => {
         const opt = document.createElement("option");
@@ -1237,7 +1281,6 @@
         opt.textContent = s;
         sourceSelect.appendChild(opt);
       });
-
       const yearSelect = document.getElementById("yearSelect");
       allYears.forEach(y => {
         const opt = document.createElement("option");
@@ -1245,7 +1288,6 @@
         opt.textContent = y;
         yearSelect.appendChild(opt);
       });
-
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1254,11 +1296,8 @@
           applyFilters();
         });
       });
-
       document.getElementById("globalSearchBtn").addEventListener("click", applyFilters);
       document.getElementById("sortSelect").addEventListener("change", applyFilters);
-
-      // ✅ БЕЗОПАСНОЕ ВОССТАНОВЛЕНИЕ РЕЖИМА ПОИСКА
       let savedMode = localStorage.getItem('gochs_search_mode');
       if (savedMode) {
         savedMode = savedMode.replace(/^["']|["']$/g, '').trim();
@@ -1268,14 +1307,12 @@
       }
       localStorage.setItem('gochs_search_mode', savedMode);
       document.querySelector(`input[name="searchMode"][value="${savedMode}"]`).checked = true;
-
       document.querySelectorAll('input[name="searchMode"]').forEach(radio => {
         radio.addEventListener('change', () => {
-          localStorage.setItem('gochs_search_mode', radio.value); // ✅ без JSON.stringify!
+          localStorage.setItem('gochs_search_mode', radio.value);
           applyFilters();
         });
       });
-
       updateTabCounts();
       applyFilters();
     }
@@ -1284,6 +1321,12 @@
       document.getElementById("globalSearch").focus();
       loadDocuments();
     });
+
+    // Глобальные функции
+    window.filterByField = filterByField;
+    window.filterByCatalog = filterByCatalog;
+    window.toggleBookmark = toggleBookmark;
+    window.addRecentDoc = addRecentDoc;
   </script>
 </body>
 </html>
