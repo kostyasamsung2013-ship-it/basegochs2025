@@ -382,6 +382,72 @@
     .suggestion-item:hover, .suggestion-item.selected {
       background: #f1f3f5;
     }
+
+    /* === Онбординг === */
+    #onboarding-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 10000;
+      pointer-events: none;
+      display: none;
+    }
+    #onboarding-hole {
+      position: absolute;
+      background: transparent;
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
+      pointer-events: auto;
+      z-index: 10001;
+    }
+    #onboarding-tooltip {
+      position: absolute;
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      max-width: 320px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      z-index: 10002;
+      pointer-events: auto;
+      font-family: 'Inter', sans-serif;
+    }
+    #onboarding-tooltip h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: var(--primary);
+    }
+    #onboarding-tooltip p {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: #495057;
+    }
+    .onboarding-controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .onboarding-btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+    }
+    .onboarding-btn.secondary {
+      background: #6c757d;
+    }
+    .onboarding-btn.skip {
+      background: transparent;
+      color: #6c757d;
+      margin-left: auto;
+    }
+
     @media (max-width: 1100px) {
       .three-columns {
         flex-direction: column;
@@ -423,6 +489,7 @@
     </div>
     <div class="suggestions" id="suggestions" style="display:none;"></div>
   </div>
+
   <div class="three-columns">
     <div class="left-col">
       <div class="mobile-filters-toggle" onclick="toggleMobileFilters()">Разделы ▼</div>
@@ -433,13 +500,16 @@
         </div>
       </div>
     </div>
+
     <div class="center-col">
       <div id="results-anchor"></div>
+
       <div class="tabs-with-export">
         <button class="tab-btn active" data-view="all">Все документы</button>
         <button class="tab-btn" data-view="bookmarks">Избранное (<span id="bookmark-count">0</span>)</button>
         <button class="tab-btn" data-view="recent">Недавние (<span id="recent-count">0</span>)</button>
       </div>
+
       <div class="export-controls">
         <select id="exportScope" class="search-select" style="min-width: 160px; width: auto;">
           <option value="filtered">Текущие результаты</option>
@@ -448,11 +518,13 @@
         </select>
         <button class="btn btn-secondary export-btn" onclick="exportDocumentsToExcel()">Экспорт в Excel</button>
       </div>
+
       <div class="active-filters" id="activeFilters" style="display:none;"></div>
       <div class="results-info" id="status"></div>
       <div id="results"></div>
       <div class="pagination-container" id="pagination-bottom"></div>
     </div>
+
     <div class="right-col">
       <div class="mobile-filters-toggle" onclick="toggleMobileFilters()">Фильтры ▼</div>
       <div class="compact-filters" id="filtersPanelRight">
@@ -506,7 +578,15 @@
       </div>
     </div>
   </div>
+
   <div id="toast"></div>
+
+  <!-- Онбординг -->
+  <div id="onboarding-overlay">
+    <div id="onboarding-hole"></div>
+    <div id="onboarding-tooltip"></div>
+  </div>
+
   <script>
     let allDocuments = [];
     const JSON_URL = 'https://raw.githubusercontent.com/kostyasamsung2013-ship-it/basegochs2025/main/documents.json';
@@ -527,6 +607,7 @@
         `;
       }
     }
+
     let sectionToSubsections = {};
     let allYears = [];
     let currentResults = [];
@@ -566,10 +647,10 @@
       return null;
     }
 
-    // ✅ НОВАЯ ФУНКЦИЯ: извлечение даты из ISO-строки
+    // ✅ ИЗВЛЕЧЕНИЕ ДАТЫ ИЗ ISO: "2024-11-19T..." → "2024-11-19"
     function extractDateFromISO(isoString) {
       if (!isoString) return null;
-      return isoString.substring(0, 10); // "2024-11-19T..." → "2024-11-19"
+      return isoString.substring(0, 10);
     }
 
     function getSearchMode() {
@@ -900,7 +981,7 @@
       });
     }
 
-    // ✅ ПОЛНОСТЬЮ ОБНОВЛЁННАЯ ФУНКЦИЯ applyFilters
+    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ С УЧЁТОМ ISO-ДАТ
     function applyFilters() {
       currentPage = 1;
       let globalQuery = document.getElementById("globalSearch").value.trim();
@@ -969,7 +1050,7 @@
         const docSource = doc.Источник || doc.source;
         const matchesSource = !source || (docSource && docSource === source);
 
-        // ✅ ГОД: извлекаем из ISO-даты
+        // ✅ ГОД ИЗ ISO
         const docYear = extractDateFromISO(doc.Дата || doc.date)?.split('-')[0] || "";
         const matchesYear = !year || (docYear === year);
 
@@ -981,7 +1062,7 @@
             docSection1 === item.catalog && docSection2 === item.subsection
           );
 
-        // ✅ ДАТА: сравниваем только YYYY-MM-DD
+        // ✅ ДАТА ИЗ ISO
         let matchesDate = true;
         const docDate = extractDateFromISO(doc.Дата || doc.date);
         if (exactDate) {
@@ -1188,7 +1269,7 @@
       applyFilters();
     }
 
-    // ✅ ИСПРАВЛЕНО: сбор лет из ISO-дат
+    // ✅ ИНИЦИАЛИЗАЦИЯ С СБОРОМ ЛЕТ ИЗ ISO
     function initializeApp() {
       allDocuments.forEach((doc, idx) => {
         if (!doc.id) doc.id = `doc_${idx}`;
@@ -1278,6 +1359,140 @@
 
       updateTabCounts();
       applyFilters();
+
+      // ✅ ЗАПУСК ОНБОРДИНГА
+      if (!localStorage.getItem('gochs_onboarding_done')) {
+        setTimeout(() => {
+          startOnboarding();
+        }, 800);
+      }
+    }
+
+    // === Онбординг ===
+    const ONBOARDING_KEY = 'gochs_onboarding_done';
+
+    const onboardingSteps = [
+      {
+        target: '.global-search',
+        title: 'Поиск документов',
+        text: 'Введите название, номер или дату. Подсказки помогут найти нужный документ быстро.',
+        position: 'bottom'
+      },
+      {
+        target: '.left-col .compact-filters',
+        title: 'Разделы',
+        text: 'Отметьте нужные разделы слева, чтобы сузить список документов.',
+        position: 'right'
+      },
+      {
+        target: '.right-col .compact-filters',
+        title: 'Дополнительные фильтры',
+        text: 'Здесь можно задать точные критерии: вид, источник, год, дату и сортировку.',
+        position: 'left'
+      },
+      {
+        target: '.tabs-with-export',
+        title: 'Избранное и экспорт',
+        text: 'Переключайтесь между всеми документами, избранным и недавними. Экспортируйте данные в Excel!',
+        position: 'bottom'
+      },
+      {
+        target: '.card:first-child .card-title',
+        title: 'Карточка документа',
+        text: 'Нажмите на название, чтобы открыть документ. Кнопка «☆ В избранное» сохранит его для быстрого доступа.',
+        position: 'top'
+      }
+    ];
+
+    let currentStep = 0;
+
+    function startOnboarding() {
+      if (localStorage.getItem(ONBOARDING_KEY)) return;
+      currentStep = 0;
+      showOnboardingStep();
+    }
+
+    function showOnboardingStep() {
+      if (currentStep >= onboardingSteps.length) {
+        endOnboarding();
+        return;
+      }
+
+      const step = onboardingSteps[currentStep];
+      const targetEl = document.querySelector(step.target);
+      if (!targetEl) {
+        setTimeout(() => showOnboardingStep(), 300);
+        return;
+      }
+
+      const rect = targetEl.getBoundingClientRect();
+      const hole = document.getElementById('onboarding-hole');
+      const tooltip = document.getElementById('onboarding-tooltip');
+
+      hole.style.top = rect.top + 'px';
+      hole.style.left = rect.left + 'px';
+      hole.style.width = rect.width + 'px';
+      hole.style.height = rect.height + 'px';
+
+      let top, left;
+      const tooltipWidth = 320;
+      const tooltipHeight = 150;
+
+      switch (step.position) {
+        case 'top':
+          top = rect.top - tooltipHeight - 10;
+          left = rect.left;
+          break;
+        case 'bottom':
+          top = rect.bottom + 10;
+          left = rect.left;
+          break;
+        case 'left':
+          top = rect.top;
+          left = rect.left - tooltipWidth - 10;
+          break;
+        case 'right':
+        default:
+          top = rect.top;
+          left = rect.right + 10;
+          break;
+      }
+
+      top = Math.max(20, Math.min(window.innerHeight - tooltipHeight - 20, top));
+      left = Math.max(20, Math.min(window.innerWidth - tooltipWidth - 20, left));
+
+      tooltip.style.top = top + 'px';
+      tooltip.style.left = left + 'px';
+      tooltip.innerHTML = `
+        <h3>${step.title}</h3>
+        <p>${step.text}</p>
+        <div class="onboarding-controls">
+          ${currentStep > 0 ? '<button class="onboarding-btn secondary" onclick="prevOnboardingStep()">← Назад</button>' : ''}
+          <button class="onboarding-btn" onclick="nextOnboardingStep()">
+            ${currentStep === onboardingSteps.length - 1 ? 'Завершить' : 'Далее →'}
+          </button>
+          <button class="onboarding-btn skip" onclick="endOnboarding()">Пропустить</button>
+        </div>
+      `;
+
+      document.getElementById('onboarding-overlay').style.display = 'block';
+    }
+
+    function nextOnboardingStep() {
+      currentStep++;
+      showOnboardingStep();
+    }
+
+    function prevOnboardingStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        showOnboardingStep();
+      }
+    }
+
+    function endOnboarding() {
+      document.getElementById('onboarding-overlay').style.display = 'none';
+      localStorage.setItem(ONBOARDING_KEY, 'true');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
