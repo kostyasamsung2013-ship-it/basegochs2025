@@ -35,7 +35,7 @@
       z-index: 200;
     }
     .global-search-title {
-      display: none; /* Скрыто по требованию */
+      display: none;
     }
     .search-input-wrapper {
       display: flex;
@@ -96,7 +96,6 @@
       width: 280px;
       flex-shrink: 0;
     }
-    /* === Компактные фильтры справа === */
     .compact-filters {
       background: var(--card-bg);
       border-radius: 10px;
@@ -123,7 +122,6 @@
     .compact-filters .btn-group {
       margin-top: 16px;
     }
-    /* === Вкладки + экспорт === */
     .tabs-with-export {
       display: flex;
       align-items: center;
@@ -138,11 +136,9 @@
       flex-wrap: wrap;
       align-items: center;
     }
-    /* === Убираем верхнюю пагинацию === */
     .pagination-container#pagination-top {
       display: none !important;
     }
-    /* === Остальные стили === */
     .mobile-filters-toggle {
       display: none;
       margin-bottom: 16px;
@@ -380,7 +376,7 @@
     }
     .suggestion-item {
       padding: 10px 16px;
-      cursor: pointer; /* ✅ Рука при наведении */
+      cursor: pointer;
       font-size: 14px;
     }
     .suggestion-item:hover, .suggestion-item.selected {
@@ -427,9 +423,7 @@
     </div>
     <div class="suggestions" id="suggestions" style="display:none;"></div>
   </div>
-
   <div class="three-columns">
-    <!-- Левая колонка: разделы -->
     <div class="left-col">
       <div class="mobile-filters-toggle" onclick="toggleMobileFilters()">Разделы ▼</div>
       <div class="compact-filters" id="filtersPanel">
@@ -439,18 +433,13 @@
         </div>
       </div>
     </div>
-
-    <!-- Центр: документы -->
     <div class="center-col">
       <div id="results-anchor"></div>
-
       <div class="tabs-with-export">
         <button class="tab-btn active" data-view="all">Все документы</button>
         <button class="tab-btn" data-view="bookmarks">Избранное (<span id="bookmark-count">0</span>)</button>
         <button class="tab-btn" data-view="recent">Недавние (<span id="recent-count">0</span>)</button>
       </div>
-
-      <!-- ✅ ГИБКИЙ ЭКСПОРТ -->
       <div class="export-controls">
         <select id="exportScope" class="search-select" style="min-width: 160px; width: auto;">
           <option value="filtered">Текущие результаты</option>
@@ -459,14 +448,11 @@
         </select>
         <button class="btn btn-secondary export-btn" onclick="exportDocumentsToExcel()">Экспорт в Excel</button>
       </div>
-
       <div class="active-filters" id="activeFilters" style="display:none;"></div>
       <div class="results-info" id="status"></div>
       <div id="results"></div>
       <div class="pagination-container" id="pagination-bottom"></div>
     </div>
-
-    <!-- Правая колонка: фильтры -->
     <div class="right-col">
       <div class="mobile-filters-toggle" onclick="toggleMobileFilters()">Фильтры ▼</div>
       <div class="compact-filters" id="filtersPanelRight">
@@ -520,11 +506,8 @@
       </div>
     </div>
   </div>
-
   <div id="toast"></div>
-
   <script>
-    // === ЗАГРУЗКА ДАННЫХ ===
     let allDocuments = [];
     const JSON_URL = 'https://raw.githubusercontent.com/kostyasamsung2013-ship-it/basegochs2025/main/documents.json';
     async function loadDocuments() {
@@ -544,7 +527,6 @@
         `;
       }
     }
-
     let sectionToSubsections = {};
     let allYears = [];
     let currentResults = [];
@@ -582,6 +564,12 @@
         return `${year}-${month}-${day}`;
       }
       return null;
+    }
+
+    // ✅ НОВАЯ ФУНКЦИЯ: извлечение даты из ISO-строки
+    function extractDateFromISO(isoString) {
+      if (!isoString) return null;
+      return isoString.substring(0, 10); // "2024-11-19T..." → "2024-11-19"
     }
 
     function getSearchMode() {
@@ -749,7 +737,6 @@
     function updateTabCounts() {
       document.getElementById('bookmark-count').textContent = bookmarks.length;
       document.getElementById('recent-count').textContent = recentDocs.length;
-      // Экспорт теперь всегда виден — не скрываем
     }
 
     function toggleBookmark(docId) {
@@ -774,7 +761,6 @@
       updateTabCounts();
     }
 
-    // ✅ ГИБКАЯ ФУНКЦИЯ ЭКСПОРТА
     function exportDocumentsToExcel() {
       let docsToExport = [];
       const scope = document.getElementById('exportScope').value;
@@ -789,7 +775,7 @@
       else if (scope === 'all') {
         docsToExport = [...allDocuments];
       } 
-      else { // 'filtered'
+      else {
         if (currentResults.length === 0) {
           showToast('Нет данных для экспорта');
           return;
@@ -892,27 +878,13 @@
           const type = this.getAttribute("data-type");
           const value = this.getAttribute("data-value");
           switch (type) {
-            case 'global':
-              document.getElementById("globalSearch").value = "";
-              break;
-            case 'type':
-              document.getElementById("typeSelect").value = "";
-              break;
-            case 'source':
-              document.getElementById("sourceSelect").value = "";
-              break;
-            case 'year':
-              document.getElementById("yearSelect").value = "";
-              break;
-            case 'exactDate':
-              document.getElementById("exactDate").value = "";
-              break;
-            case 'dateFrom':
-              document.getElementById("dateFrom").value = "";
-              break;
-            case 'dateTo':
-              document.getElementById("dateTo").value = "";
-              break;
+            case 'global': document.getElementById("globalSearch").value = ""; break;
+            case 'type': document.getElementById("typeSelect").value = ""; break;
+            case 'source': document.getElementById("sourceSelect").value = ""; break;
+            case 'year': document.getElementById("yearSelect").value = ""; break;
+            case 'exactDate': document.getElementById("exactDate").value = ""; break;
+            case 'dateFrom': document.getElementById("dateFrom").value = ""; break;
+            case 'dateTo': document.getElementById("dateTo").value = ""; break;
             case 'catalog':
               const catCheckbox = document.querySelector(`.catalog-checkbox[value="${CSS.escape(value)}"]`);
               if (catCheckbox) catCheckbox.checked = false;
@@ -928,6 +900,7 @@
       });
     }
 
+    // ✅ ПОЛНОСТЬЮ ОБНОВЛЁННАЯ ФУНКЦИЯ applyFilters
     function applyFilters() {
       currentPage = 1;
       let globalQuery = document.getElementById("globalSearch").value.trim();
@@ -937,17 +910,19 @@
       const exactDate = document.getElementById("exactDate").value;
       const dateFrom = document.getElementById("dateFrom").value;
       const dateTo = document.getElementById("dateTo").value;
-      const parsedDate = parseDateInput(globalQuery);
-      if (parsedDate) {
+
+      const parsedDateFromGlobal = parseDateInput(globalQuery);
+      if (parsedDateFromGlobal) {
         globalQuery = '';
         const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
         const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
           catalog: cb.getAttribute('data-catalog'),
           subsection: cb.value
         }));
+
         currentResults = allDocuments.filter(doc => {
-          const docDate = doc.Дата || doc.date;
-          const matchesDate = docDate === parsedDate;
+          const docDate = extractDateFromISO(doc.Дата || doc.date);
+          const matchesDate = docDate === parsedDateFromGlobal;
           const docSection1 = doc["Раздел 1"] || doc.section;
           const docSection2 = doc["Раздел 2"] || doc.subsection;
           const matchesCatalog = selectedCatalogs.length === 0 || selectedCatalogs.includes(docSection1);
@@ -957,6 +932,7 @@
             );
           return matchesDate && matchesCatalog && matchesSubcatalog;
         });
+
         const sortBy = document.getElementById("sortSelect").value;
         sortResults(currentResults, sortBy);
         renderResults();
@@ -964,11 +940,13 @@
         scrollToResults();
         return;
       }
+
       const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
       const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
         catalog: cb.getAttribute('data-catalog'),
         subsection: cb.value
       }));
+
       const filteredDocs = allDocuments.filter(doc => {
         let matchesGlobal = true;
         if (globalQuery) {
@@ -985,12 +963,16 @@
             matchesGlobal = queryWords.length === 0 || queryWords.some(word => docText.includes(word));
           }
         }
+
         const docType = doc.Вид || doc.type;
         const matchesType = !type || (docType && docType === type);
         const docSource = doc.Источник || doc.source;
         const matchesSource = !source || (docSource && docSource === source);
-        const docYear = (doc.Дата || doc.date || "").split('-')[0];
-        const matchesYear = !year || (docYear && docYear === year);
+
+        // ✅ ГОД: извлекаем из ISO-даты
+        const docYear = extractDateFromISO(doc.Дата || doc.date)?.split('-')[0] || "";
+        const matchesYear = !year || (docYear === year);
+
         const docSection1 = doc["Раздел 1"] || doc.section;
         const matchesCatalog = selectedCatalogs.length === 0 || selectedCatalogs.includes(docSection1);
         const docSection2 = doc["Раздел 2"] || doc.subsection;
@@ -998,18 +980,25 @@
           selectedSubcatalogs.some(item => 
             docSection1 === item.catalog && docSection2 === item.subsection
           );
+
+        // ✅ ДАТА: сравниваем только YYYY-MM-DD
         let matchesDate = true;
-        const docDate = doc.Дата || doc.date;
+        const docDate = extractDateFromISO(doc.Дата || doc.date);
         if (exactDate) {
           matchesDate = docDate === exactDate;
         } else if (dateFrom || dateTo) {
-          if (!docDate) return false;
-          if (dateFrom && docDate < dateFrom) return false;
-          if (dateTo && docDate > dateTo) return false;
+          if (!docDate) {
+            matchesDate = false;
+          } else {
+            if (dateFrom && docDate < dateFrom) matchesDate = false;
+            if (dateTo && docDate > dateTo) matchesDate = false;
+          }
         }
+
         return matchesGlobal && matchesType && matchesSource && 
                matchesYear && matchesCatalog && matchesSubcatalog && matchesDate;
       });
+
       let unfilteredResults;
       if (currentView === 'bookmarks') {
         unfilteredResults = filteredDocs.filter(doc => bookmarks.includes(doc.id));
@@ -1018,11 +1007,13 @@
       } else {
         unfilteredResults = filteredDocs;
       }
+
       currentResults = removeDuplicatesByNameAndNumber(unfilteredResults);
       if (currentView !== 'recent') {
         const sortBy = document.getElementById("sortSelect").value;
         sortResults(currentResults, sortBy);
       }
+
       renderResults();
       renderActiveFilters();
       scrollToResults();
@@ -1052,7 +1043,6 @@
       }
     }
 
-    // ✅ КАРТОЧКИ БЕЗ РАЗДЕЛОВ И ПОДРАЗДЕЛОВ
     function renderResults() {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
@@ -1116,8 +1106,6 @@
           if (docNumber) parts.push(`№ ${docNumber}`);
           if (formattedDate) parts.push(`от ${formattedDate}`);
           const headerLine = parts.join(" ") || "—";
-
-          // ❌ РАЗДЕЛЫ И ПОДРАЗДЕЛЫ УДАЛЕНЫ ИЗ КАРТОЧКИ
 
           card.innerHTML = `
             <div class="card-header-line">${escapeHtml(headerLine)}</div>
@@ -1200,15 +1188,18 @@
       applyFilters();
     }
 
+    // ✅ ИСПРАВЛЕНО: сбор лет из ISO-дат
     function initializeApp() {
       allDocuments.forEach((doc, idx) => {
         if (!doc.id) doc.id = `doc_${idx}`;
       });
+
       allYears = [...new Set(
         allDocuments
-          .map(d => (d.Дата || d.date || "").split('-')[0])
+          .map(d => extractDateFromISO(d.Дата || d.date)?.split('-')[0])
           .filter(Boolean)
       )].sort().reverse();
+
       sectionToSubsections = {};
       allDocuments.forEach(doc => {
         const sec1 = doc["Раздел 1"] || doc.section;
@@ -1221,8 +1212,10 @@
         sectionToSubsections[sec] = Array.from(sectionToSubsections[sec]).sort();
       }
       renderCatalogList();
+
       const types = [...new Set(allDocuments.map(d => d.Вид || d.type).filter(Boolean))].sort();
       const sources = [...new Set(allDocuments.map(d => d.Источник || d.source).filter(Boolean))].sort();
+
       const typeSelect = document.getElementById("typeSelect");
       types.forEach(t => {
         const opt = document.createElement("option");
@@ -1230,6 +1223,7 @@
         opt.textContent = t;
         typeSelect.appendChild(opt);
       });
+
       const sourceSelect = document.getElementById("sourceSelect");
       function truncateText(text, maxLength = 28) {
         if (!text) return "";
@@ -1245,6 +1239,7 @@
       sourceSelect.addEventListener("change", function() {
         this.title = this.options[this.selectedIndex]?.value || "";
       });
+
       const yearSelect = document.getElementById("yearSelect");
       allYears.forEach(y => {
         const opt = document.createElement("option");
@@ -1252,6 +1247,7 @@
         opt.textContent = y;
         yearSelect.appendChild(opt);
       });
+
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1260,8 +1256,10 @@
           applyFilters();
         });
       });
+
       document.getElementById("globalSearchBtn").addEventListener("click", applyFilters);
       document.getElementById("sortSelect").addEventListener("change", applyFilters);
+
       let savedMode = localStorage.getItem('gochs_search_mode');
       if (savedMode) {
         savedMode = savedMode.replace(/^["']|["']$/g, '').trim();
@@ -1277,6 +1275,7 @@
           applyFilters();
         });
       });
+
       updateTabCounts();
       applyFilters();
     }
