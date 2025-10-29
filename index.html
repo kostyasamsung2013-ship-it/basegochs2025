@@ -6,6 +6,14 @@
   <title>ГОЧС: Поиск документов</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-59SJXCGJ6S"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-59SJXCGJ6S');
+  </script>
   <style>
     :root {
       --primary: #4361ee;
@@ -382,7 +390,6 @@
     .suggestion-item:hover, .suggestion-item.selected {
       background: #f1f3f5;
     }
-
     /* === Онбординг === */
     #onboarding-overlay {
       position: fixed;
@@ -447,7 +454,6 @@
       color: #6c757d;
       margin-left: auto;
     }
-
     @media (max-width: 1100px) {
       .three-columns {
         flex-direction: column;
@@ -489,7 +495,6 @@
     </div>
     <div class="suggestions" id="suggestions" style="display:none;"></div>
   </div>
-
   <div class="three-columns">
     <div class="left-col">
       <div class="mobile-filters-toggle" onclick="toggleMobileFilters()">Разделы ▼</div>
@@ -500,16 +505,13 @@
         </div>
       </div>
     </div>
-
     <div class="center-col">
       <div id="results-anchor"></div>
-
       <div class="tabs-with-export">
         <button class="tab-btn active" data-view="all">Все документы</button>
         <button class="tab-btn" data-view="bookmarks">Избранное (<span id="bookmark-count">0</span>)</button>
         <button class="tab-btn" data-view="recent">Недавние (<span id="recent-count">0</span>)</button>
       </div>
-
       <div class="export-controls">
         <select id="exportScope" class="search-select" style="min-width: 160px; width: auto;">
           <option value="filtered">Текущие результаты</option>
@@ -518,13 +520,11 @@
         </select>
         <button class="btn btn-secondary export-btn" onclick="exportDocumentsToExcel()">Экспорт в Excel</button>
       </div>
-
       <div class="active-filters" id="activeFilters" style="display:none;"></div>
       <div class="results-info" id="status"></div>
       <div id="results"></div>
       <div class="pagination-container" id="pagination-bottom"></div>
     </div>
-
     <div class="right-col">
       <div class="mobile-filters-toggle" onclick="toggleMobileFilters()">Фильтры ▼</div>
       <div class="compact-filters" id="filtersPanelRight">
@@ -578,15 +578,12 @@
       </div>
     </div>
   </div>
-
   <div id="toast"></div>
-
   <!-- Онбординг -->
   <div id="onboarding-overlay">
     <div id="onboarding-hole"></div>
     <div id="onboarding-tooltip"></div>
   </div>
-
   <script>
     let allDocuments = [];
     const JSON_URL = 'https://raw.githubusercontent.com/kostyasamsung2013-ship-it/basegochs2025/main/documents.json';
@@ -607,7 +604,6 @@
         `;
       }
     }
-
     let sectionToSubsections = {};
     let allYears = [];
     let currentResults = [];
@@ -617,7 +613,6 @@
     let bookmarks = JSON.parse(localStorage.getItem('gochs_bookmarks') || '[]');
     let recentDocs = JSON.parse(localStorage.getItem('gochs_recent') || '[]');
     let currentView = 'all';
-
     function escapeHtml(text) {
       if (!text) return "";
       return String(text)
@@ -627,14 +622,12 @@
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
-
     function showToast(message) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.style.opacity = "1";
       setTimeout(() => { toast.style.opacity = "0"; }, 2000);
     }
-
     function parseDateInput(input) {
       const dateRegex = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
       const match = input.match(dateRegex);
@@ -646,13 +639,11 @@
       }
       return null;
     }
-
     // ✅ ИЗВЛЕЧЕНИЕ ДАТЫ ИЗ ISO: "2024-11-19T..." → "2024-11-19"
     function extractDateFromISO(isoString) {
       if (!isoString) return null;
       return isoString.substring(0, 10);
     }
-
     function getSearchMode() {
       const radios = document.querySelectorAll('input[name="searchMode"]');
       for (const radio of radios) {
@@ -660,7 +651,6 @@
       }
       return 'or';
     }
-
     function removeDuplicatesByNameAndNumber(docs) {
       const seen = new Set();
       return docs.filter(doc => {
@@ -673,7 +663,6 @@
         return true;
       });
     }
-
     function clearFiltersSilent() {
       document.getElementById("globalSearch").value = "";
       document.getElementById("clearGlobalSearch").style.display = "none";
@@ -686,14 +675,12 @@
       document.getElementById("sortSelect").value = "date";
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     }
-
     document.getElementById("globalSearch").addEventListener("input", function() {
       const clearBtn = document.getElementById("clearGlobalSearch");
       clearBtn.style.display = this.value ? "block" : "none";
       clearTimeout(suggestionsTimeout);
       suggestionsTimeout = setTimeout(() => showSuggestions(this.value), 300);
     });
-
     function showSuggestions(query) {
       const suggestionsDiv = document.getElementById("suggestions");
       if (!query.trim() || query.length < 2) {
@@ -714,41 +701,37 @@
       ).join('');
       suggestionsDiv.style.display = "block";
     }
-
     function selectSuggestion(name) {
       clearFiltersSilent();
       document.getElementById("globalSearch").value = name;
       document.getElementById("clearGlobalSearch").style.display = "block";
       document.getElementById("suggestions").style.display = "none";
-
       const exactMatches = allDocuments.filter(doc =>
         (doc.Название || doc.title || "").trim().toLowerCase() === name.trim().toLowerCase()
       );
-
       if (exactMatches.length === 1) {
         currentResults = [exactMatches[0]];
         currentPage = 1;
         renderResults();
         renderActiveFilters();
         scrollToResults();
+        // GA4: поиск по подсказке
+        gtag('event', 'search', { search_term: name });
       } else {
         applyFilters();
       }
     }
-
     function clearGlobalSearch() {
       document.getElementById("globalSearch").value = "";
       document.getElementById("clearGlobalSearch").style.display = "none";
       document.getElementById("suggestions").style.display = "none";
       applyFilters();
     }
-
     document.addEventListener("click", function(e) {
       if (!e.target.closest(".global-search")) {
         document.getElementById("suggestions").style.display = "none";
       }
     });
-
     function toggleMobileFilters() {
       const left = document.getElementById('filtersPanel');
       const right = document.getElementById('filtersPanelRight');
@@ -757,7 +740,6 @@
         right.classList.toggle('active');
       }
     }
-
     function filterByCatalog(catalog) {
       if (!catalog || catalog === "—") return;
       clearFiltersSilent();
@@ -766,14 +748,12 @@
       applyFilters();
       scrollToResults();
     }
-
     function scrollToResults() {
       const anchor = document.getElementById("results-anchor");
       if (anchor) {
         anchor.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-
     function renderCatalogList() {
       const container = document.getElementById("catalog-list");
       container.innerHTML = "";
@@ -814,26 +794,50 @@
         cb.addEventListener('change', () => applyFilters());
       });
     }
-
     function updateTabCounts() {
       document.getElementById('bookmark-count').textContent = bookmarks.length;
       document.getElementById('recent-count').textContent = recentDocs.length;
     }
-
     function toggleBookmark(docId) {
       const index = bookmarks.indexOf(docId);
       if (index === -1) {
         bookmarks.push(docId);
         showToast('Добавлено в избранное');
+        // Найдём документ по ID
+        const docObj = allDocuments.find(d => d.id === docId);
+        if (docObj) {
+          const docYear = extractDateFromISO(docObj.Дата || docObj.date)?.split('-')[0] || 'unknown';
+          const docSource = docObj.Источник || docObj.source || 'unknown';
+          const docType = docObj.Вид || docObj.type || 'unknown';
+          gtag('event', 'bookmark_add', {
+            document_id: docObj.id,
+            document_title: docObj.Название || docObj.title || '',
+            document_year: docYear,
+            document_source: docSource,
+            document_type: docType
+          });
+        }
       } else {
         bookmarks.splice(index, 1);
         showToast('Удалено из избранного');
+        const docObj = allDocuments.find(d => d.id === docId);
+        if (docObj) {
+          const docYear = extractDateFromISO(docObj.Дата || docObj.date)?.split('-')[0] || 'unknown';
+          const docSource = docObj.Источник || docObj.source || 'unknown';
+          const docType = docObj.Вид || docObj.type || 'unknown';
+          gtag('event', 'bookmark_remove', {
+            document_id: docObj.id,
+            document_title: docObj.Название || docObj.title || '',
+            document_year: docYear,
+            document_source: docSource,
+            document_type: docType
+          });
+        }
       }
       localStorage.setItem('gochs_bookmarks', JSON.stringify(bookmarks));
       updateTabCounts();
       renderResults();
     }
-
     function addRecentDoc(doc) {
       recentDocs = recentDocs.filter(d => d.id !== doc.id);
       recentDocs.unshift(doc);
@@ -841,11 +845,9 @@
       localStorage.setItem('gochs_recent', JSON.stringify(recentDocs));
       updateTabCounts();
     }
-
     function exportDocumentsToExcel() {
       let docsToExport = [];
       const scope = document.getElementById('exportScope').value;
-
       if (scope === 'bookmarks') {
         if (bookmarks.length === 0) {
           showToast('Нет закладок для экспорта');
@@ -863,7 +865,11 @@
         }
         docsToExport = [...currentResults];
       }
-
+      // GA4: экспорт
+      gtag('event', 'export_excel', {
+        export_scope: scope,
+        document_count: docsToExport.length
+      });
       const wsData = docsToExport.map(doc => ({
         'Название': doc.Название || doc.title || '',
         'Номер': doc.Номер || doc.number || '',
@@ -875,20 +881,16 @@
         'Ссылка': doc.ссылка || doc.rtfUrl || '',
         'Скачать': doc["Ссылка для открытия"] || doc.rtfDirectUrl || ''
       }));
-
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Экспорт");
-
       let filename = "ГОЧС_Экспорт.xlsx";
       if (scope === 'bookmarks') filename = "ГОЧС_Закладки.xlsx";
       else if (scope === 'all') filename = "ГОЧС_Вся_база.xlsx";
       else filename = "ГОЧС_Текущие_результаты.xlsx";
-
       XLSX.writeFile(wb, filename);
       showToast(`Экспорт завершён: ${docsToExport.length} документов`);
     }
-
     function getActiveFilters() {
       const filters = [];
       const globalQuery = document.getElementById("globalSearch").value.trim();
@@ -935,7 +937,6 @@
       });
       return filters;
     }
-
     function renderActiveFilters() {
       const filters = getActiveFilters();
       const container = document.getElementById("activeFilters");
@@ -980,18 +981,20 @@
         });
       });
     }
-
     // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ С УЧЁТОМ ISO-ДАТ
     function applyFilters() {
       currentPage = 1;
       let globalQuery = document.getElementById("globalSearch").value.trim();
+      // GA4: отправка поискового запроса
+      if (globalQuery) {
+        gtag('event', 'search', { search_term: globalQuery });
+      }
       const type = document.getElementById("typeSelect").value;
       const source = document.getElementById("sourceSelect").value;
       const year = document.getElementById("yearSelect").value;
       const exactDate = document.getElementById("exactDate").value;
       const dateFrom = document.getElementById("dateFrom").value;
       const dateTo = document.getElementById("dateTo").value;
-
       const parsedDateFromGlobal = parseDateInput(globalQuery);
       if (parsedDateFromGlobal) {
         globalQuery = '';
@@ -1000,7 +1003,6 @@
           catalog: cb.getAttribute('data-catalog'),
           subsection: cb.value
         }));
-
         currentResults = allDocuments.filter(doc => {
           const docDate = extractDateFromISO(doc.Дата || doc.date);
           const matchesDate = docDate === parsedDateFromGlobal;
@@ -1013,7 +1015,6 @@
             );
           return matchesDate && matchesCatalog && matchesSubcatalog;
         });
-
         const sortBy = document.getElementById("sortSelect").value;
         sortResults(currentResults, sortBy);
         renderResults();
@@ -1021,12 +1022,20 @@
         scrollToResults();
         return;
       }
-
       const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
       const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
         catalog: cb.getAttribute('data-catalog'),
         subsection: cb.value
       }));
+
+      // ✅ Подробный сбор по каждому фильтру
+      const activeFilters = getActiveFilters();
+      activeFilters.forEach(f => {
+        gtag('event', 'filter_applied', {
+          filter_type: f.type,
+          filter_value: f.value
+        });
+      });
 
       const filteredDocs = allDocuments.filter(doc => {
         let matchesGlobal = true;
@@ -1044,16 +1053,13 @@
             matchesGlobal = queryWords.length === 0 || queryWords.some(word => docText.includes(word));
           }
         }
-
         const docType = doc.Вид || doc.type;
         const matchesType = !type || (docType && docType === type);
         const docSource = doc.Источник || doc.source;
         const matchesSource = !source || (docSource && docSource === source);
-
         // ✅ ГОД ИЗ ISO
         const docYear = extractDateFromISO(doc.Дата || doc.date)?.split('-')[0] || "";
         const matchesYear = !year || (docYear === year);
-
         const docSection1 = doc["Раздел 1"] || doc.section;
         const matchesCatalog = selectedCatalogs.length === 0 || selectedCatalogs.includes(docSection1);
         const docSection2 = doc["Раздел 2"] || doc.subsection;
@@ -1061,7 +1067,6 @@
           selectedSubcatalogs.some(item => 
             docSection1 === item.catalog && docSection2 === item.subsection
           );
-
         // ✅ ДАТА ИЗ ISO
         let matchesDate = true;
         const docDate = extractDateFromISO(doc.Дата || doc.date);
@@ -1075,11 +1080,9 @@
             if (dateTo && docDate > dateTo) matchesDate = false;
           }
         }
-
         return matchesGlobal && matchesType && matchesSource && 
                matchesYear && matchesCatalog && matchesSubcatalog && matchesDate;
       });
-
       let unfilteredResults;
       if (currentView === 'bookmarks') {
         unfilteredResults = filteredDocs.filter(doc => bookmarks.includes(doc.id));
@@ -1088,18 +1091,15 @@
       } else {
         unfilteredResults = filteredDocs;
       }
-
       currentResults = removeDuplicatesByNameAndNumber(unfilteredResults);
       if (currentView !== 'recent') {
         const sortBy = document.getElementById("sortSelect").value;
         sortResults(currentResults, sortBy);
       }
-
       renderResults();
       renderActiveFilters();
       scrollToResults();
     }
-
     function sortResults(arr, sortBy) {
       if (sortBy === 'title') {
         arr.sort((a, b) => (a.Название || a.title || '').localeCompare(b.Название || b.title || ''));
@@ -1123,7 +1123,6 @@
         arr.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
       }
     }
-
     function renderResults() {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
@@ -1172,7 +1171,6 @@
           const docDateRaw = doc.Дата || doc.date || "";
           const docLink = doc.ссылка || doc.rtfUrl;
           const docDownload = doc["Ссылка для открытия"] || doc.rtfDirectUrl;
-
           let formattedDate = "";
           if (docDateRaw) {
             const d = new Date(docDateRaw);
@@ -1180,14 +1178,12 @@
               formattedDate = d.toLocaleDateString('ru-RU');
             }
           }
-
           const parts = [];
           if (docSource) parts.push(docSource);
           if (docType) parts.push(docType);
           if (docNumber) parts.push(`№ ${docNumber}`);
           if (formattedDate) parts.push(`от ${formattedDate}`);
           const headerLine = parts.join(" ") || "—";
-
           card.innerHTML = `
             <div class="card-header-line">${escapeHtml(headerLine)}</div>
             <div class="card-title">
@@ -1214,6 +1210,21 @@
               if (docJson) {
                 const docObj = JSON.parse(docJson);
                 addRecentDoc(docObj);
+
+                // ✅ Детализированное событие взаимодействия с документом
+                const docYear = extractDateFromISO(docObj.Дата || docObj.date)?.split('-')[0] || 'unknown';
+                const docSource = docObj.Источник || docObj.source || 'unknown';
+                const docType = docObj.Вид || docObj.type || 'unknown';
+                const isDownload = link.textContent.trim().includes('Скачать');
+
+                gtag('event', 'document_interaction', {
+                  document_id: docObj.id,
+                  document_title: docObj.Название || docObj.title || '',
+                  document_year: docYear,
+                  document_source: docSource,
+                  document_type: docType,
+                  interaction_type: isDownload ? 'download' : 'open'
+                });
               }
             });
           });
@@ -1222,7 +1233,6 @@
       resultsDiv.appendChild(grid);
       renderPagination();
     }
-
     function renderPagination() {
       if (currentView === 'recent') {
         document.getElementById("pagination-bottom").innerHTML = "";
@@ -1256,31 +1266,26 @@
       }
       bottom.innerHTML = html;
     }
-
     function goToPage(page) {
       currentPage = page;
       renderResults();
       renderActiveFilters();
       scrollToResults();
     }
-
     function clearFilters() {
       clearFiltersSilent();
       applyFilters();
     }
-
     // ✅ ИНИЦИАЛИЗАЦИЯ С СБОРОМ ЛЕТ ИЗ ISO
     function initializeApp() {
       allDocuments.forEach((doc, idx) => {
         if (!doc.id) doc.id = `doc_${idx}`;
       });
-
       allYears = [...new Set(
         allDocuments
           .map(d => extractDateFromISO(d.Дата || d.date)?.split('-')[0])
           .filter(Boolean)
       )].sort().reverse();
-
       sectionToSubsections = {};
       allDocuments.forEach(doc => {
         const sec1 = doc["Раздел 1"] || doc.section;
@@ -1293,10 +1298,8 @@
         sectionToSubsections[sec] = Array.from(sectionToSubsections[sec]).sort();
       }
       renderCatalogList();
-
       const types = [...new Set(allDocuments.map(d => d.Вид || d.type).filter(Boolean))].sort();
       const sources = [...new Set(allDocuments.map(d => d.Источник || d.source).filter(Boolean))].sort();
-
       const typeSelect = document.getElementById("typeSelect");
       types.forEach(t => {
         const opt = document.createElement("option");
@@ -1304,7 +1307,6 @@
         opt.textContent = t;
         typeSelect.appendChild(opt);
       });
-
       const sourceSelect = document.getElementById("sourceSelect");
       function truncateText(text, maxLength = 28) {
         if (!text) return "";
@@ -1320,7 +1322,6 @@
       sourceSelect.addEventListener("change", function() {
         this.title = this.options[this.selectedIndex]?.value || "";
       });
-
       const yearSelect = document.getElementById("yearSelect");
       allYears.forEach(y => {
         const opt = document.createElement("option");
@@ -1328,19 +1329,18 @@
         opt.textContent = y;
         yearSelect.appendChild(opt);
       });
-
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentView = btn.dataset.view;
+          // GA4: переключение вкладки
+          gtag('event', 'tab_switch', { tab_name: currentView });
           applyFilters();
         });
       });
-
       document.getElementById("globalSearchBtn").addEventListener("click", applyFilters);
       document.getElementById("sortSelect").addEventListener("change", applyFilters);
-
       let savedMode = localStorage.getItem('gochs_search_mode');
       if (savedMode) {
         savedMode = savedMode.replace(/^["']|["']$/g, '').trim();
@@ -1356,10 +1356,8 @@
           applyFilters();
         });
       });
-
       updateTabCounts();
       applyFilters();
-
       // ✅ ЗАПУСК ОНБОРДИНГА
       if (!localStorage.getItem('gochs_onboarding_done')) {
         setTimeout(() => {
@@ -1367,10 +1365,8 @@
         }, 800);
       }
     }
-
     // === Онбординг ===
     const ONBOARDING_KEY = 'gochs_onboarding_done';
-
     const onboardingSteps = [
       {
         target: '.global-search',
@@ -1403,41 +1399,33 @@
         position: 'top'
       }
     ];
-
     let currentStep = 0;
-
     function startOnboarding() {
       if (localStorage.getItem(ONBOARDING_KEY)) return;
       currentStep = 0;
       showOnboardingStep();
     }
-
     function showOnboardingStep() {
       if (currentStep >= onboardingSteps.length) {
         endOnboarding();
         return;
       }
-
       const step = onboardingSteps[currentStep];
       const targetEl = document.querySelector(step.target);
       if (!targetEl) {
         setTimeout(() => showOnboardingStep(), 300);
         return;
       }
-
       const rect = targetEl.getBoundingClientRect();
       const hole = document.getElementById('onboarding-hole');
       const tooltip = document.getElementById('onboarding-tooltip');
-
       hole.style.top = rect.top + 'px';
       hole.style.left = rect.left + 'px';
       hole.style.width = rect.width + 'px';
       hole.style.height = rect.height + 'px';
-
       let top, left;
       const tooltipWidth = 320;
       const tooltipHeight = 150;
-
       switch (step.position) {
         case 'top':
           top = rect.top - tooltipHeight - 10;
@@ -1457,10 +1445,8 @@
           left = rect.right + 10;
           break;
       }
-
       top = Math.max(20, Math.min(window.innerHeight - tooltipHeight - 20, top));
       left = Math.max(20, Math.min(window.innerWidth - tooltipWidth - 20, left));
-
       tooltip.style.top = top + 'px';
       tooltip.style.left = left + 'px';
       tooltip.innerHTML = `
@@ -1474,32 +1460,28 @@
           <button class="onboarding-btn skip" onclick="endOnboarding()">Пропустить</button>
         </div>
       `;
-
       document.getElementById('onboarding-overlay').style.display = 'block';
     }
-
     function nextOnboardingStep() {
       currentStep++;
       showOnboardingStep();
     }
-
     function prevOnboardingStep() {
       if (currentStep > 0) {
         currentStep--;
         showOnboardingStep();
       }
     }
-
     function endOnboarding() {
       document.getElementById('onboarding-overlay').style.display = 'none';
       localStorage.setItem(ONBOARDING_KEY, 'true');
+      // GA4: завершение онбординга
+      gtag('event', 'onboarding_complete');
     }
-
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById("globalSearch").focus();
       loadDocuments();
     });
-
     window.filterByCatalog = filterByCatalog;
     window.toggleBookmark = toggleBookmark;
     window.addRecentDoc = addRecentDoc;
