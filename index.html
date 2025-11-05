@@ -628,17 +628,6 @@
       toast.style.opacity = "1";
       setTimeout(() => { toast.style.opacity = "0"; }, 2000);
     }
-    function parseDateInput(input) {
-      const dateRegex = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
-      const match = input.match(dateRegex);
-      if (match) {
-        const day = match[1].padStart(2, '0');
-        const month = match[2].padStart(2, '0');
-        const year = match[3];
-        return `${year}-${month}-${day}`;
-      }
-      return null;
-    }
     // ✅ ИЗВЛЕЧЕНИЕ ДАТЫ ИЗ ISO: "2024-11-19T..." → "2024-11-19"
     function extractDateFromISO(isoString) {
       if (!isoString) return null;
@@ -651,18 +640,25 @@
       }
       return 'or';
     }
+
+    // ✅ УЛУЧШЕННАЯ ДЕДУПЛИКАЦИЯ
     function removeDuplicatesByNameAndNumber(docs) {
       const seen = new Set();
       return docs.filter(doc => {
         const title = String(doc.Название || doc.title || '').trim().toLowerCase();
         const number = String(doc.Номер || doc.number || '').trim().toLowerCase();
-        if (!title && !number) return true;
-        const key = `${title}||${number}`;
+        const date = String(doc.Дата || doc.date || '').trim();
+        const source = String(doc.Источник || doc.source || '').trim().toLowerCase();
+
+        if (!title && !number && !date && !source) return true;
+
+        const key = `${title}||${number}||${date}||${source}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       });
     }
+
     function clearFiltersSilent() {
       document.getElementById("globalSearch").value = "";
       document.getElementById("clearGlobalSearch").style.display = "none";
@@ -706,20 +702,10 @@
       document.getElementById("globalSearch").value = name;
       document.getElementById("clearGlobalSearch").style.display = "block";
       document.getElementById("suggestions").style.display = "none";
-      const exactMatches = allDocuments.filter(doc =>
-        (doc.Название || doc.title || "").trim().toLowerCase() === name.trim().toLowerCase()
-      );
-      if (exactMatches.length === 1) {
-        currentResults = [exactMatches[0]];
-        currentPage = 1;
-        renderResults();
-        renderActiveFilters();
-        scrollToResults();
-        // GA4: поиск по подсказке
-        gtag('event', 'search', { search_term: name });
-      } else {
-        applyFilters();
-      }
+      // ✅ ВСЕГДА вызываем applyFilters — дедупликация и фильтры работают корректно
+      applyFilters();
+      scrollToResults();
+      gtag('event', 'search', { search_term: name });
     }
     function clearGlobalSearch() {
       document.getElementById("globalSearch").value = "";
@@ -803,7 +789,6 @@
       if (index === -1) {
         bookmarks.push(docId);
         showToast('Добавлено в избранное');
-        // Найдём документ по ID
         const docObj = allDocuments.find(d => d.id === docId);
         if (docObj) {
           const docYear = extractDateFromISO(docObj.Дата || docObj.date)?.split('-')[0] || 'unknown';
@@ -865,7 +850,6 @@
         }
         docsToExport = [...currentResults];
       }
-      // GA4: экспорт
       gtag('event', 'export_excel', {
         export_scope: scope,
         document_count: docsToExport.length
@@ -981,11 +965,11 @@
         });
       });
     }
-    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ С УЧЁТОМ ISO-ДАТ
+
+    // ✅ ОСНОВНАЯ ФУНКЦИЯ ПРИМЕНЕНИЯ ФИЛЬТРОВ — С ПОДДЕРЖКОЙ ЧАСТИЧНЫХ ДАТ
     function applyFilters() {
       currentPage = 1;
       let globalQuery = document.getElementById("globalSearch").value.trim();
-      // GA4: отправка поискового запроса
       if (globalQuery) {
         gtag('event', 'search', { search_term: globalQuery });
       }
@@ -995,69 +979,44 @@
       const exactDate = document.getElementById("exactDate").value;
       const dateFrom = document.getElementById("dateFrom").value;
       const dateTo = document.getElementById("dateTo").value;
-      const parsedDateFromGlobal = parseDateInput(globalQuery);
-      if (parsedDateFromGlobal) {
-        globalQuery = '';
-        const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
-        const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
-          catalog: cb.getAttribute('data-catalog'),
-          subsection: cb.value
-        }));
-        currentResults = allDocuments.filter(doc => {
-          const docDate = extractDateFromISO(doc.Дата || doc.date);
-          const matchesDate = docDate === parsedDateFromGlobal;
-          const docSection1 = doc["Раздел 1"] || doc.section;
-          const docSection2 = doc["Раздел 2"] || doc.subsection;
-          const matchesCatalog = selectedCatalogs.length === 0 || selectedCatalogs.includes(docSection1);
-          const matchesSubcatalog = selectedSubcatalogs.length === 0 || 
-            selectedSubcatalogs.some(item => 
-              docSection1 === item.catalog && docSection2 === item.subsection
-            );
-          return matchesDate && matchesCatalog && matchesSubcatalog;
-        });
-        const sortBy = document.getElementById("sortSelect").value;
-        sortResults(currentResults, sortBy);
-        renderResults();
-        renderActiveFilters();
-        scrollToResults();
-        return;
-      }
+
       const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(cb => cb.value);
       const selectedSubcatalogs = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => ({
         catalog: cb.getAttribute('data-catalog'),
         subsection: cb.value
       }));
 
-      // ✅ Подробный сбор по каждому фильтру
-      const activeFilters = getActiveFilters();
-      activeFilters.forEach(f => {
-        gtag('event', 'filter_applied', {
-          filter_type: f.type,
-          filter_value: f.value
-        });
-      });
-
       const filteredDocs = allDocuments.filter(doc => {
+        // === Расширенный поиск по глобальному запросу ===
         let matchesGlobal = true;
         if (globalQuery) {
           const queryWords = globalQuery.toLowerCase().split(/\s+/).filter(w => w.length > 0);
-          const docText = [
+          const mode = getSearchMode();
+
+          // Собираем текст документа
+          let docText = [
             doc.Название || doc.title || '',
             doc.Номер || doc.number || '',
-            doc.Дата || doc.date || ''
+            doc.Вид || doc.type || '',
+            doc.Источник || doc.source || ''
           ].join(' ').toLowerCase();
-          const mode = getSearchMode();
-          if (mode === 'and') {
-            matchesGlobal = queryWords.every(word => docText.includes(word));
-          } else {
-            matchesGlobal = queryWords.length === 0 || queryWords.some(word => docText.includes(word));
+
+          // Добавляем варианты даты
+          const isoDate = extractDateFromISO(doc.Дата || doc.date);
+          if (isoDate) {
+            const [yearPart, monthPart, dayPart] = isoDate.split('-');
+            docText += ` ${isoDate} ${dayPart}.${monthPart}.${yearPart} ${monthPart}.${yearPart} ${yearPart} ${monthPart} ${dayPart}`;
           }
+
+          const checks = queryWords.map(word => docText.includes(word));
+          matchesGlobal = mode === 'and' ? checks.every(Boolean) : checks.some(Boolean);
         }
+
+        // Остальные фильтры без изменений
         const docType = doc.Вид || doc.type;
         const matchesType = !type || (docType && docType === type);
         const docSource = doc.Источник || doc.source;
         const matchesSource = !source || (docSource && docSource === source);
-        // ✅ ГОД ИЗ ISO
         const docYear = extractDateFromISO(doc.Дата || doc.date)?.split('-')[0] || "";
         const matchesYear = !year || (docYear === year);
         const docSection1 = doc["Раздел 1"] || doc.section;
@@ -1067,7 +1026,6 @@
           selectedSubcatalogs.some(item => 
             docSection1 === item.catalog && docSection2 === item.subsection
           );
-        // ✅ ДАТА ИЗ ISO
         let matchesDate = true;
         const docDate = extractDateFromISO(doc.Дата || doc.date);
         if (exactDate) {
@@ -1080,9 +1038,11 @@
             if (dateTo && docDate > dateTo) matchesDate = false;
           }
         }
+
         return matchesGlobal && matchesType && matchesSource && 
                matchesYear && matchesCatalog && matchesSubcatalog && matchesDate;
       });
+
       let unfilteredResults;
       if (currentView === 'bookmarks') {
         unfilteredResults = filteredDocs.filter(doc => bookmarks.includes(doc.id));
@@ -1091,6 +1051,7 @@
       } else {
         unfilteredResults = filteredDocs;
       }
+
       currentResults = removeDuplicatesByNameAndNumber(unfilteredResults);
       if (currentView !== 'recent') {
         const sortBy = document.getElementById("sortSelect").value;
@@ -1100,6 +1061,7 @@
       renderActiveFilters();
       scrollToResults();
     }
+
     function sortResults(arr, sortBy) {
       if (sortBy === 'title') {
         arr.sort((a, b) => (a.Название || a.title || '').localeCompare(b.Название || b.title || ''));
@@ -1123,6 +1085,7 @@
         arr.sort((a, b) => (b.Дата || b.date || "").localeCompare(a.Дата || a.date || ""));
       }
     }
+
     function renderResults() {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
@@ -1210,13 +1173,10 @@
               if (docJson) {
                 const docObj = JSON.parse(docJson);
                 addRecentDoc(docObj);
-
-                // ✅ Детализированное событие взаимодействия с документом
                 const docYear = extractDateFromISO(docObj.Дата || docObj.date)?.split('-')[0] || 'unknown';
                 const docSource = docObj.Источник || docObj.source || 'unknown';
                 const docType = docObj.Вид || docObj.type || 'unknown';
                 const isDownload = link.textContent.trim().includes('Скачать');
-
                 gtag('event', 'document_interaction', {
                   document_id: docObj.id,
                   document_title: docObj.Название || docObj.title || '',
@@ -1233,6 +1193,7 @@
       resultsDiv.appendChild(grid);
       renderPagination();
     }
+
     function renderPagination() {
       if (currentView === 'recent') {
         document.getElementById("pagination-bottom").innerHTML = "";
@@ -1266,17 +1227,19 @@
       }
       bottom.innerHTML = html;
     }
+
     function goToPage(page) {
       currentPage = page;
       renderResults();
       renderActiveFilters();
       scrollToResults();
     }
+
     function clearFilters() {
       clearFiltersSilent();
       applyFilters();
     }
-    // ✅ ИНИЦИАЛИЗАЦИЯ С СБОРОМ ЛЕТ ИЗ ISO
+
     function initializeApp() {
       allDocuments.forEach((doc, idx) => {
         if (!doc.id) doc.id = `doc_${idx}`;
@@ -1334,7 +1297,6 @@
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentView = btn.dataset.view;
-          // GA4: переключение вкладки
           gtag('event', 'tab_switch', { tab_name: currentView });
           applyFilters();
         });
@@ -1358,13 +1320,13 @@
       });
       updateTabCounts();
       applyFilters();
-      // ✅ ЗАПУСК ОНБОРДИНГА
       if (!localStorage.getItem('gochs_onboarding_done')) {
         setTimeout(() => {
           startOnboarding();
         }, 800);
       }
     }
+
     // === Онбординг ===
     const ONBOARDING_KEY = 'gochs_onboarding_done';
     const onboardingSteps = [
@@ -1475,13 +1437,14 @@
     function endOnboarding() {
       document.getElementById('onboarding-overlay').style.display = 'none';
       localStorage.setItem(ONBOARDING_KEY, 'true');
-      // GA4: завершение онбординга
       gtag('event', 'onboarding_complete');
     }
+
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById("globalSearch").focus();
       loadDocuments();
     });
+
     window.filterByCatalog = filterByCatalog;
     window.toggleBookmark = toggleBookmark;
     window.addRecentDoc = addRecentDoc;
