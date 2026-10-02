@@ -675,7 +675,7 @@
       const clearBtn = document.getElementById("clearGlobalSearch");
       clearBtn.style.display = this.value ? "block" : "none";
       clearTimeout(suggestionsTimeout);
-      suggestionsTimeout = setTimeout(() => showSuggestions(this.value), 300);
+      //suggestionsTimeout = setTimeout(() => showSuggestions(this.value), 300);
     });
     function showSuggestions(query) {
       const suggestionsDiv = document.getElementById("suggestions");
