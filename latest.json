@@ -1,6 +1,8 @@
 {
-  "version": "04_2026_10",
-  "url": "https://github.com/kostyasamsung2013-ship-it/basegochs2025/releases/download/v04.2026/WordDB_Update_04_2026_10.wdbupdate",
-  "sha256": "34C152A0EB2576213ED1AFA2638B1307BEBA5DDE98E685212A850F7B70A67E48",
-  "notes": "Обновление базы ГОЧС 10.2026"
+  "version": "04_2026_01",
+  "full": {
+    "url": "https://github.com/kostyasamsung2013-ship-it/basegochs2025/releases/download/v04.2026.01/WordDB_Update_04_2026_01.wdbupdate",
+    "sha256": "FCCA1F507799604943E3F069A63A35428230A29E323C0B4301E3358DC639FE11"
+  },
+  "notes": ""
 }
