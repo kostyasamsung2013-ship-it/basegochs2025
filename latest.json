@@ -1,14 +1,8 @@
 {
-  "version": "04_2026_02",
+  "version": "04_2026_01",
   "full": {
-    "url": "https://github.com/kostyasamsung2013-ship-it/basegochs2025/releases/download/v04.2026.02/WordDB_Update_04_2026_02.wdbupdate",
-    "sha256": "EFFEC33C8399457D8BBDCB46A12DF870F89FC64EC46941D23DB8DEEDBC1C7AC7"
-  },
-  "delta": {
-    "from": "04_2026_01",
-    "to": "04_2026_02",
-    "url": "https://github.com/kostyasamsung2013-ship-it/basegochs2025/releases/download/v04.2026.02/WordDB_Delta_04_2026_01_to_04_2026_02.wdbdelta",
-    "sha256": "4D737379BB6106518F1E69AEFB8B107CA9AAF7CD1B758846CD402F9EF744E6B7"
+    "url": "https://github.com/kostyasamsung2013-ship-it/basegochs2025/releases/download/v04.2026.01/WordDB_Update_04_2026_01.wdbupdate",
+    "sha256": "172CCD389CED02DF01AC89BD232815CCF1A1A2C2DFBBC7AFEB6912A90D5B90DB"
   },
   "notes": ""
 }
