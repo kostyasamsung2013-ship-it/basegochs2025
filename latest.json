@@ -9,6 +9,20 @@
     "to": "04_2026_02",
     "url": "https://github.com/kostyasamsung2013-ship-it/basegochs2025/releases/download/v04.2026.02/WordDB_Delta_04_2026_01_to_04_2026_02.wdbdelta",
     "sha256": "ADA616E3AC097013E590AB6D7D725B08FCFA83515C3F7954D7F015ACFCA83848"
-  },
-  "notes": ""
+ },
+  "notes": "",
+  "message": {
+    "id": "message-2026-10-21",
+    "enabled": true,
+    "title": "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044F \u0434\u043B\u044F \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u0435\u0439",
+    "type": "info",
+    "text": "\u041D\u0430\u0447\u0430\u043B\u0430\u0441\u044C \u043F\u043E\u0434\u043F\u0438\u0441\u043A\u0430",
+    "details": "",
+    "buttonText": "\u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435",
+    "buttonUrl": "https://xn--------3veaabcahvp3aypd2a3deubak3alvuzd5n8bzl.xn--p1ai/shop",
+    "show": "untilClosed",
+    "startDate": null,
+    "endDate": null,
+    "minViewerVersion": "1.13.71"
+  }
 }
