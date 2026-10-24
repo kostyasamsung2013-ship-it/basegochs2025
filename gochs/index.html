@@ -2669,5 +2669,25 @@ html.gochs-embedded .ag-preview{position:fixed!important;inset:0!important}
  if(window.parent!==window){document.documentElement.classList.add('gochs-embedded');}
 })();
 </script>
+
+<style id="gochs-at-embedded-workspace">
+/* AT: inside Tilda iframe the app owns its scroll; the outer page does not grow. */
+@media (min-width:1251px){
+ html.gochs-embedded,html.gochs-embedded body{height:100%!important;max-height:100%!important;overflow:hidden!important}
+ html.gochs-embedded body{display:flex!important;flex-direction:column!important;min-height:0!important}
+ html.gochs-embedded .global-search{position:relative!important;top:auto!important;flex:0 0 auto!important;z-index:250!important}
+ html.gochs-embedded .three-columns{flex:1 1 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:hidden!important;align-items:stretch!important;width:100%!important}
+ html.gochs-embedded .left-col,html.gochs-embedded .center-col,html.gochs-embedded .right-col{min-height:0!important;max-height:100%!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin}
+ html.gochs-embedded .left-col{overflow-x:hidden!important}
+ html.gochs-embedded .center-col{overflow-x:hidden!important}
+ html.gochs-embedded .right-col{position:relative!important;top:auto!important;overflow-x:hidden!important}
+ html.gochs-embedded #filtersPanel,html.gochs-embedded #filtersPanelRight{position:relative!important;top:auto!important;max-height:none!important;height:auto!important;overflow:visible!important}
+ html.gochs-embedded .tabs-with-export{position:sticky!important;top:0!important;z-index:30!important}
+}
+/* Narrow layouts retain normal vertical flow and accessible collapsible filters. */
+@media (max-width:1250px){
+ html.gochs-embedded,html.gochs-embedded body{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important}
+}
+</style>
 </body>
 </html>
