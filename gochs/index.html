@@ -910,10 +910,9 @@ button,input,select{font-family:inherit}
       scrollToResults();
     }
     function scrollToResults() {
-      const anchor = document.getElementById("results-anchor");
-      if (anchor) {
-        anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      // Scroll only the inner results pane, never the host Tilda page.
+      const pane = document.querySelector('.center-col');
+      if (pane && pane.scrollHeight > pane.clientHeight) pane.scrollTo({top:0, behavior:'smooth'});
     }
     function renderCatalogList() {
       const container = document.getElementById("catalog-list");
@@ -1568,7 +1567,7 @@ button,input,select{font-family:inherit}
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById("globalSearch").focus();
+      // Do not autofocus an input inside an embedded iframe: browsers may scroll the host page to it.
       loadDocuments();
     });
 
