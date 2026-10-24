@@ -2664,24 +2664,9 @@ html.gochs-embedded,html.gochs-embedded body{overflow-x:hidden!important}
 html.gochs-embedded .ag-preview{position:fixed!important;inset:0!important}
 @media(max-width:1250px){html.gochs-embedded .gochs-settings-panel{max-width:calc(100vw - 24px)!important}}
 </style>
-<script id="gochs-an-embed-script">
+<script id="gochs-as-embed-script">
 (function(){
-  const embedded=window.parent!==window;
-  if(!embedded)return;
-  document.documentElement.classList.add('gochs-embedded');
-  let last=0;
-  function report(){
-    const h=Math.ceil(Math.max(document.body.scrollHeight,document.documentElement.scrollHeight,document.body.offsetHeight));
-    if(h>0&&Math.abs(h-last)>3){last=h;window.parent.postMessage({type:'gochs:height',height:h},'*')}
-  }
-  function start(){
-    report();
-    if('ResizeObserver'in window)new ResizeObserver(report).observe(document.body);
-    new MutationObserver(()=>requestAnimationFrame(report)).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']});
-    window.addEventListener('resize',report);
-    setInterval(report,2000);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+ if(window.parent!==window){document.documentElement.classList.add('gochs-embedded');}
 })();
 </script>
 </body>
