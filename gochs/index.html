@@ -2688,5 +2688,17 @@ html.gochs-embedded .ag-preview{position:fixed!important;inset:0!important}
  html.gochs-embedded,html.gochs-embedded body{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important}
 }
 </style>
+
+<style id="gochs-av-left-single-scroll">
+/* AV: one wheel-scroll container for the whole left sidebar inside Tilda.
+   Previously #catalog-list trapped wheel events while .left-col scrolled separately. */
+@media (min-width:1251px){
+ html.gochs-embedded .left-col{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain!important}
+ html.gochs-embedded .left-col #filtersPanel{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
+ html.gochs-embedded .left-col #filtersPanelRight{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important}
+ html.gochs-embedded .left-col #filtersPanel .filter-section{display:block!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
+ html.gochs-embedded .left-col #catalog-list{display:block!important;height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important;overscroll-behavior:auto!important;flex:none!important}
+}
+</style>
 </body>
 </html>
