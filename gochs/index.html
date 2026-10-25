@@ -711,6 +711,48 @@ button,input,select{font-family:inherit}
 }
 /* Host page can suppress the embedded promo by adding ?hostpromo=1 to the iframe URL. */
 html.gochs-host-has-promo #gochs-win-promo,html.gochs-host-has-promo #gochs-win-launcher{display:none!important}
+
+/* v3 — permanent Windows button in toolbar; centered database heading */
+.global-search-title{
+  text-align:center!important;
+  width:100%;
+}
+#gochs-win-launcher.gochs-win-top-launcher{
+  position:static!important;
+  left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+  flex:0 0 auto;
+  min-height:34px!important;
+  height:34px!important;
+  margin:0!important;
+  padding:6px 12px!important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:1px solid #f0bd35!important;
+  border-radius:8px!important;
+  background:linear-gradient(135deg,#ffd65a,#f0a91f)!important;
+  color:#17333d!important;
+  font:800 11px Manrope,Inter,Arial,sans-serif!important;
+  line-height:1!important;
+  white-space:nowrap;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(226,157,20,.24)!important;
+  transition:transform .15s ease,filter .15s ease,box-shadow .15s ease;
+}
+#gochs-win-launcher.gochs-win-top-launcher:hover{
+  filter:brightness(1.05);
+  transform:translateY(-1px);
+  box-shadow:0 6px 16px rgba(226,157,20,.3)!important;
+}
+#gochs-win-launcher.gochs-win-top-launcher span{font-size:13px;line-height:1}
+@media(max-width:900px){
+  #gochs-win-launcher.gochs-win-top-launcher{display:none!important}
+}
+@media(max-width:600px){
+  .global-search-title{text-align:left!important}
+}
+
 </style>
 </head>
 <body>
@@ -719,7 +761,7 @@ html.gochs-host-has-promo #gochs-win-promo,html.gochs-host-has-promo #gochs-win-
   <div class="gochs-win-body"><div class="gochs-win-label">Расширенная версия</div><div class="gochs-win-title">НПА ГОЧС 2026 для Windows</div><div class="gochs-win-text">Профессиональная работа с нормативной базой: расширенный поиск, связи документов, история редакций и обновления.</div><div class="gochs-win-actions"><button type="button" class="gochs-win-demo" id="gochs-win-demo">▶ Посмотреть демонстрацию</button><a class="gochs-win-access" href="https://xn--------3veaabcahvp3aypd2a3deubak3alvuzd5n8bzl.xn--p1ai/shop/31/desc/informacionnaja-sistema-dlja-rukovoditelej-i-specialistov-v-oblasti-grazhdanskoj-oborony-i-zashhity-ot-chrezvychajnykh-situacij" target="_blank" rel="noopener">Получить доступ ↗</a></div></div>
   <button type="button" class="gochs-win-close" id="gochs-win-close" aria-label="Закрыть">×</button>
 </div>
-<button type="button" id="gochs-win-launcher" title="Версия НПА ГОЧС 2026 для Windows">Windows-версия</button>
+
 <div id="gochs-demo-modal" role="dialog" aria-modal="true" aria-label="Демонстрация НПА ГОЧС 2026 для Windows"><div class="gochs-demo-window"><div class="gochs-demo-header"><div class="gochs-demo-headtext"><div class="gochs-demo-headtitle">НПА ГОЧС 2026 для Windows</div><div class="gochs-demo-headsub">Интерактивная демонстрация профессиональной версии</div></div><a class="gochs-demo-access" href="https://xn--------3veaabcahvp3aypd2a3deubak3alvuzd5n8bzl.xn--p1ai/shop/31/desc/informacionnaja-sistema-dlja-rukovoditelej-i-specialistov-v-oblasti-grazhdanskoj-oborony-i-zashhity-ot-chrezvychajnykh-situacij" target="_blank" rel="noopener">Получить доступ ↗</a><button type="button" class="gochs-demo-close" id="gochs-demo-close" aria-label="Закрыть">×</button></div><iframe id="gochs-demo-frame" class="gochs-demo-frame" title="Демонстрация НПА ГОЧС 2026" loading="lazy" allow="fullscreen"></iframe></div></div>
 
 <div id="gochs-loading-screen" role="status" aria-live="polite" aria-label="Загрузка нормативной базы">
@@ -747,7 +789,7 @@ html.gochs-host-has-promo #gochs-win-promo,html.gochs-host-has-promo #gochs-win-
       </div>
 <input type="text" id="globalSearch" placeholder="Поиск: название, номер, дата..."></div>
       <button id="clearGlobalSearch" onclick="clearGlobalSearch()">×</button>
-      <button id="globalSearchBtn" class="btn btn-primary">Найти</button><label class="gochs-scope-control" title="Поиск выполняется по названиям и реквизитам документов, но не по тексту файлов"><span>Область поиска</span><select id="gochsSearchScope" aria-label="Область поиска"><option value="metadata">По названиям и всем реквизитам</option><option value="title">Только по названиям</option></select></label><div class="font-controls" role="group" aria-label="Размер шрифта"><button type="button" id="fontSmaller" title="Уменьшить шрифт">А−</button><output id="fontPercent" aria-live="polite">110%</output><button type="button" id="fontLarger" title="Увеличить шрифт">А+</button><button type="button" id="fontReset" title="Вернуть размер 110%">↺</button></div><label class="font-family-picker" title="Выбрать шрифт"><span>Шрифт</span><select id="fontFamilyChoice" aria-label="Шрифт интерфейса"><option value="golos">Golos Text</option><option value="onest">Onest</option><option value="inter">Inter</option><option value="source">Source Sans 3</option><option value="literata">Literata · с засечками</option></select></label><label class="theme-picker" title="Оформление сайта"><span>Тема</span><select id="themeChoice" aria-label="Цветовая тема"><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label>
+      <button id="globalSearchBtn" class="btn btn-primary">Найти</button><label class="gochs-scope-control" title="Поиск выполняется по названиям и реквизитам документов, но не по тексту файлов"><span>Область поиска</span><select id="gochsSearchScope" aria-label="Область поиска"><option value="metadata">По названиям и всем реквизитам</option><option value="title">Только по названиям</option></select></label><div class="font-controls" role="group" aria-label="Размер шрифта"><button type="button" id="fontSmaller" title="Уменьшить шрифт">А−</button><output id="fontPercent" aria-live="polite">110%</output><button type="button" id="fontLarger" title="Увеличить шрифт">А+</button><button type="button" id="fontReset" title="Вернуть размер 110%">↺</button></div><label class="font-family-picker" title="Выбрать шрифт"><span>Шрифт</span><select id="fontFamilyChoice" aria-label="Шрифт интерфейса"><option value="golos">Golos Text</option><option value="onest">Onest</option><option value="inter">Inter</option><option value="source">Source Sans 3</option><option value="literata">Literata · с засечками</option></select></label><label class="theme-picker" title="Оформление сайта"><span>Тема</span><select id="themeChoice" aria-label="Цветовая тема"><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label><button type="button" id="gochs-win-launcher" class="gochs-win-top-launcher" title="Версия НПА ГОЧС 2026 для Windows"><span aria-hidden="true">▣</span> Windows-версия</button>
     </div>
     <div class="suggestions" id="suggestions" style="display:none;"></div>
   </div>
