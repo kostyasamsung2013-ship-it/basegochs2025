@@ -709,9 +709,6 @@ button,input,select{font-family:inherit}
   .gochs-win-close{width:24px!important;height:24px!important;right:6px!important;top:6px!important;font-size:16px!important}
   #gochs-win-launcher{display:none!important}
 }
-/* Host page can suppress the embedded promo by adding ?hostpromo=1 to the iframe URL. */
-html.gochs-host-has-promo #gochs-win-promo{display:none!important}
-
 /* v3 — permanent Windows button in toolbar; centered database heading */
 .global-search-title{
   text-align:center!important;
@@ -2855,22 +2852,18 @@ html.gochs-embedded .ag-preview{position:fixed!important;inset:0!important}
 </style>
 
 <script id="gochs-windows-promo-script">
-(function(){
- const params=new URLSearchParams(location.search);
- const hostAlreadyPromotes=params.get('hostpromo')==='1';
- if(hostAlreadyPromotes) document.documentElement.classList.add('gochs-host-has-promo');
- const DEMO='https://kostyasamsung2013-ship-it.github.io/basegochs2025/demo/NPA_GOCHS_2026_Showcase_v10c.html';
+(function(){ const DEMO='https://kostyasamsung2013-ship-it.github.io/basegochs2025/demo/NPA_GOCHS_2026_Showcase_v10c.html';
  const KEY='gochs_windows_promo_hidden_until_v1', DAYS=30;
  const promo=document.getElementById('gochs-win-promo'), launcher=document.getElementById('gochs-win-launcher'), modal=document.getElementById('gochs-demo-modal'), frame=document.getElementById('gochs-demo-frame');
  function suppressed(){try{return Number(localStorage.getItem(KEY)||0)>Date.now()}catch(e){return false}}
  function suppress(){try{localStorage.setItem(KEY,String(Date.now()+DAYS*86400000))}catch(e){}}
- function showPromo(){if(promo&&!hostAlreadyPromotes&&!suppressed())promo.classList.add('show')}
+ function showPromo(){if(promo&&!suppressed())promo.classList.add('show')}
  function hidePromo(save){if(promo)promo.classList.remove('show');if(save)suppress()}
  function openDemo(save){if(save)suppress();hidePromo(false);if(frame&&!frame.src)frame.src=DEMO;if(modal)modal.classList.add('open');document.documentElement.style.overflow='hidden'}
  function closeDemo(){if(modal)modal.classList.remove('open');document.documentElement.style.overflow=''}
  document.getElementById('gochs-win-close')?.addEventListener('click',()=>hidePromo(true));
  document.getElementById('gochs-win-demo')?.addEventListener('click',()=>openDemo(true));
- if(hostAlreadyPromotes&&launcher)launcher.style.display='none';
+ 
  launcher?.addEventListener('click',()=>openDemo(false));
  document.getElementById('gochs-demo-close')?.addEventListener('click',closeDemo);
  modal?.addEventListener('click',e=>{if(e.target===modal)closeDemo()});
